@@ -21,15 +21,15 @@ def get_subjectlist(search_pattern):
     #search_pattern = "/mnt/data/project_FPSA_FearGen/data/**/data.edf"
     
     import glob
-    subject_list = None;
-    for file in glob.iglob(search_pattern,recursive=True):                
-        subject_list += [(file,{'subject': get_subject(), 'run': get_run()})]
-    return subject_list
-
     def get_subject():
         return 1
     def get_run():
         return 2
+    
+    subject_list = [];
+    for file in glob.iglob(search_pattern,recursive=True):                
+        subject_list += [(file,{'subject': get_subject(), 'run': get_run()})]
+    return subject_list
 
 def get_fixmat(filelist):
     #FILELIST is a list of EDF files that will be used for this project.
