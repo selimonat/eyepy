@@ -21,10 +21,11 @@ def get_subjectlist(search_pattern):
     #search_pattern = "/mnt/data/project_FPSA_FearGen/data/**/data.edf"
     
     import glob
-    def get_subject():
-        return 1
-    def get_run():
-        return 2
+    import re
+    def get_subject(filepath):
+        m = re.search('sub[0-9]{3}' , filepath)
+    def get_run(filepath):
+        m = re.search('sub[0-9]{3}' , filepath)
     
     subject_list = [];
     for file in glob.iglob(search_pattern,recursive=True):                
