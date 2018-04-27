@@ -6,23 +6,24 @@
 #from pyedfread import edf
 
 def get_filelist(search_pattern):
-    #Returns a tuple that will store information on the EDF files 
-    #that are going to be used in the analysis. This includes filesname, 
-    #subject and run indices for each single EDF file.
-    #
-    #It will simply loop over all the files found recursively in the 
-    #project_folder and guess the subject and run indices from the path.
-    #
-    #This method will most probably not work for others, therefore it is 
-    #recommended that you generate the subjectlist tuple on your own and 
-    #continue to continue with the analysis.
-    #
-    #Example:
-    #search_pattern = "/mnt/data/project_FPSA_FearGen/data/**/data.edf"
-    #eyepy.get_filelist(sp)
-    #[('/Users/onat/Documents/Experiments/NoS/data/sub001/run001/eye/data.edf',
-    #{'run': '001', 'subject': '001'}),
+    '''
+    Returns a tuple that will store information on the EDF files 
+    that are going to be used in the analysis. This includes filesname, 
+    subject and run indices for each single EDF file.
     
+    It will simply loop over all the files found recursively in the 
+    project_folder and guess the subject and run indices from the path.
+    
+    This method will most probably not work for others, therefore it is 
+    recommended that you generate the subjectlist tuple on your own and 
+    continue to continue with the analysis.
+    
+    Example:
+    search_pattern = "/mnt/data/project_FPSA_FearGen/data/**/data.edf"
+    eyepy.get_filelist(sp)
+    [('/Users/onat/Documents/Experiments/NoS/data/sub001/run001/eye/data.edf',
+    {'run': '001', 'subject': '001'}),
+    '''
     import glob
     import re
     def get_subject():
@@ -40,12 +41,11 @@ def get_filelist(search_pattern):
 
 def get_fixmat(filelist):
     #FILELIST is a list of EDF files that will be used for this project.
-    
+    from pyedfread import edf
     #Call pyedfread and concat different data frames.
     for file in filelist:
-            print("Line {}".format(file))
-        #print("Line {}: {}".format(cnt, line))
-        #samples, events, messages = edf.pread(f)
+        filename                  = file[0][0]
+        samples, events, messages += edf.pread(filename)
 
 def bla():
     print(3)
