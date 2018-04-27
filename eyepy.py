@@ -26,10 +26,11 @@ def get_subjectlist(search_pattern):
     import glob
     import re
     def get_subject():
-        m = re.search('(?<=sub)\d{3}' , edf_path)
+        m = re.search('[(?<=sub)(?<=s)]\d{1,3}' , edf_path)
         return m.group()
     def get_run():
-        m = re.search('(?<=run)\d{3}' , edf_path)
+        #detects a 1 to 3 digits following either run, phase, r or p
+        m = re.search('[(?<=run)(?<=phase)(?<=r)(?<=p)]\d{1,3}' , edf_path)
         return m.group()
     
     subject_list = [];
