@@ -19,17 +19,22 @@ def get_subjectlist(search_pattern):
     #
     #Example:
     #search_pattern = "/mnt/data/project_FPSA_FearGen/data/**/data.edf"
+    #eyepy.get_subjectlist(sp)
+    #[('/Users/onat/Documents/Experiments/NoS/data/sub001/run001/eye/data.edf',
+    #{'run': '001', 'subject': '001'}),
     
     import glob
     import re
-    def get_subject(filepath):
-        m = re.search('sub[0-9]{3}' , filepath)
-    def get_run(filepath):
-        m = re.search('sub[0-9]{3}' , filepath)
+    def get_subject():
+        m = re.search('(?<=sub)\d{3}' , edf_path)
+        return m.group()
+    def get_run():
+        m = re.search('(?<=run)\d{3}' , edf_path)
+        return m.group()
     
     subject_list = [];
-    for file in glob.iglob(search_pattern,recursive=True):                
-        subject_list += [(file,{'subject': get_subject(), 'run': get_run()})]
+    for edf_path in glob.iglob(search_pattern,recursive=True):
+        subject_list += [(edf_path,{'subject': get_subject(), 'run': get_run()})]
     return subject_list
 
 def get_fixmat(filelist):
