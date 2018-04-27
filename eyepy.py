@@ -33,10 +33,10 @@ def get_filelist(search_pattern):
         m = re.search('[(?<=run)(?<=phase)(?<=r)(?<=p)]\d{1,3}' , edf_path)
         return m.group()
     
-    subject_list = [];
+    filelist = [];
     for edf_path in glob.iglob(search_pattern,recursive=True):
-        subject_list += [(edf_path,{'subject': get_subject(), 'run': get_run()})]
-    return subject_list
+        filelist += [(edf_path,{'subject': get_subject(), 'run': get_run()})]
+    return filelist
 
 def get_fixmat(filelist):
     #FILELIST is a list of EDF files that will be used for this project.
