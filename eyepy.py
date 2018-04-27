@@ -5,7 +5,7 @@
 
 #from pyedfread import edf
 
-def get_subjectlist(search_pattern):
+def get_filelist(search_pattern):
     #Returns a tuple that will store information on the EDF files 
     #that are going to be used in the analysis. This includes filesname, 
     #subject and run indices for each single EDF file.
@@ -19,7 +19,7 @@ def get_subjectlist(search_pattern):
     #
     #Example:
     #search_pattern = "/mnt/data/project_FPSA_FearGen/data/**/data.edf"
-    #eyepy.get_subjectlist(sp)
+    #eyepy.get_filelist(sp)
     #[('/Users/onat/Documents/Experiments/NoS/data/sub001/run001/eye/data.edf',
     #{'run': '001', 'subject': '001'}),
     
