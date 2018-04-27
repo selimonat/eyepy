@@ -26,11 +26,11 @@ def get_filelist(search_pattern):
     import glob
     import re
     def get_subject():
-        m = re.search('[(?<=sub)(?<=s)]\d{1,3}' , edf_path)
+        m = re.search('((?<=sub)|(?<=s))\d{1,3}' , edf_path)
         return m.group()
     def get_run():
         #detects a 1 to 3 digits following either run, phase, r or p
-        m = re.search('[(?<=run)(?<=phase)(?<=r)(?<=p)]\d{1,3}' , edf_path)
+        m = re.search('((?<=run)|(?<=phase)|(?<=r)|(?<=p))\d{1,3}' , edf_path)
         return m.group()
     
     filelist = [];
@@ -42,9 +42,8 @@ def get_fixmat(filelist):
     #FILELIST is a list of EDF files that will be used for this project.
     
     #Call pyedfread and concat different data frames.
-    with open(filelist) as fo:
-        for count, name in enumerate(fo):
-            print("Line {}: {}".format(count, name))
+    for file in filelist:
+            print("Line {}".format(file))
         #print("Line {}: {}".format(cnt, line))
         #samples, events, messages = edf.pread(f)
 
