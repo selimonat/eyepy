@@ -42,13 +42,17 @@ def get_filelist(search_pattern):
 def get_fixmat(filelist):
     #FILELIST is a list of EDF files that will be used for this project.
     from pyedfread import edf
+    import pandas as pd
     #Call pyedfread and concat different data frames.
     samples = events = messages= [None] * len(filelist)
     for i,file in enumerate(filelist):
         filename                  = file[0]
         samples[i], events[i], messages[i] = edf.pread(filename)
-        
-
+    
+    samples = pd.concat(samples)
+    events  = pd.concat(events)
+    messages= pd.concat(messages)
+    
 def bla():
     print(3)
 
