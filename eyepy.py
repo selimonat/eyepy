@@ -46,6 +46,7 @@ def get_fixmat(filelist):
     #Call pyedfread and concat different data frames.
     samples = events = messages= [None] * len(filelist)
     for i,file in enumerate(filelist):
+        print("Reading file {}".format(file))
         filename                  = file[0]
         samples[i], events[i], messages[i] = edf.pread(filename)
     
@@ -53,6 +54,8 @@ def get_fixmat(filelist):
     events  = pd.concat(events)
     messages= pd.concat(messages)
     
+    return samples, events, messages
+
 def bla():
     print(3)
 
