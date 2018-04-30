@@ -43,9 +43,13 @@ def get_fixmat(filelist):
     #FILELIST is a list of EDF files that will be used for this project.
     from pyedfread import edf
     #Call pyedfread and concat different data frames.
-    for file in filelist:
-        filename                  = file[0][0]
-        samples, events, messages += edf.pread(filename)
+    samples = [None] * len(filelist)
+    events = [None] * len(filelist)
+    messages = [None] * len(filelist)
+    for i,file in enumerate(filelist):
+        filename                  = file[0]
+        samples[i], events[i], messages[i] = edf.pread(filename)
+        
 
 def bla():
     print(3)
