@@ -26,9 +26,11 @@ def get_subjectlist(search_pattern):
     import glob
     import re
     def get_subject():
+        #returns subject index
         m = re.search('(?<=sub)\d{3}' , edf_path)
         return m.group()
     def get_run():
+        #returns run/phase index
         m = re.search('(?<=run)\d{3}' , edf_path)
         return m.group()
     
