@@ -53,16 +53,23 @@ def get_fixmat(filelist):
     '''
     from pyedfread import edf
     import pandas as pd
-    print("Receivied {} EDF files".format(len(filelist)))
+    import sys
+    total_file = len(filelist)
+    print("Receivied {} EDF files".format(total_file))
     #init 3 variables that will accumulate data frames as a list
-    s = [None] * len(filelist)
-    e = [None] * len(filelist)
-    m = [None] * len(filelist)
+    s = [None] * total_file
+    e = [None] * total_file
+    m = [None] * total_file
     #Call pyedfread and concat different data frames as lists.
     for i,file in enumerate(filelist):
-        filename                  = file[0]
-        print("Reading file {}".format(filename))
+        filename                  = file[0]        
         s[i], e[i], m[i] = edf.pread(filename,meta=file[1])
+        #progress report
+        sys.stdout.write('\r')        
+        sys.stdout.write("Reading file {}\n".format(filename))                                
+        sys.stdout.write("[%-20s] %d%%" % ('='*round((i+1)/total_file*20), round((i+1)/total_file*100)))
+        sys.stdout.flush()
+        
     #convert lists to data frame.
     samples = pd.concat(s)
     events  = pd.concat(e)
