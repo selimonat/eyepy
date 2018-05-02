@@ -7,16 +7,20 @@
 
 def get_filelist(search_pattern):
     '''
-    Returns a tuple that will store information on the EDF files 
-    that are going to be used in the analysis. This includes filesname, 
-    subject and run indices for each single EDF file.
+    Find files that will be used for the analysis and retrieves metadata about 
+    participants and runs.
     
-    It will simply loop over all the files found recursively in the 
-    project_folder and guess the subject and run indices from the path.
+    Returns a tuple that stores information about EDF files. This includes 
+    filename, subject and run indices for each single EDF file.
     
-    This method will most probably not work for others, therefore it is 
-    recommended that you generate the subjectlist tuple on your own and 
-    continue to continue with the analysis.
+    It will simply loop over all files found recursively in the 
+    project_folder and guess subject and run indices from the path. If this 
+    returns unexpected values have a look at the nested get_{subject,run} 
+    functions. It is strongly recommended that you create your own method to 
+    generate a tuple for your project, in case this fails (which will most 
+    likely happen).
+    
+    output: a list of tuples in the form [('filename', {"meta":'data'})]
     
     Example:
     search_pattern = "/mnt/data/project_FPSA_FearGen/data/**/data.edf"
@@ -40,7 +44,13 @@ def get_filelist(search_pattern):
     return filelist
 
 def get_fixmat(filelist):
-    #FILELIST is a list of EDF files that will be used for this project.
+    '''
+    Reads all EDF files and returns 3 dataframes based on pyedfread. 
+    Uses metadata dictionary to label dataframes with subject and run information.
+    
+    See self.get_filelist to know more about filelist format.
+    See pyedfread for more information on the output dataframes.
+    '''
     from pyedfread import edf
     import pandas as pd
     print("Receivied {} EDF files".format(len(filelist)))
@@ -48,12 +58,12 @@ def get_fixmat(filelist):
     s = [None] * len(filelist)
     e = [None] * len(filelist)
     m = [None] * len(filelist)
-    #Call pyedfread and concat different data frames.
+    #Call pyedfread and concat different data frames as lists.
     for i,file in enumerate(filelist):
         filename                  = file[0]
         print("Reading file {}".format(filename))
         s[i], e[i], m[i] = edf.pread(filename,meta=file[1])
-    
+    #convert lists to data frame.
     samples = pd.concat(s)
     events  = pd.concat(e)
     messages= pd.concat(m)
