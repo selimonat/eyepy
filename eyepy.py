@@ -71,9 +71,9 @@ def get_fixmat(filelist):
         sys.stdout.flush()
         
     #convert lists to data frame.
-    samples = pd.concat(s)
-    events  = pd.concat(e)
-    messages= pd.concat(m)
+    samples = pd.concat(s, ignore_index=True)
+    events  = pd.concat(e, ignore_index=True)
+    messages= pd.concat(m, ignore_index=True)
     
     return samples, events, messages
 
