@@ -40,13 +40,15 @@ def get_filelist(search_pattern):
     
     filelist = [];
     for edf_path in glob.iglob(search_pattern,recursive=True):
-        filelist += [(edf_path,{'subject': get_subject(), 'run': get_run()})]
+        filelist += [(edf_path,{'subject': int(get_subject()), 'run': int(get_run())})]
     return filelist
 
 def get_fixmat(filelist):
     '''
-    Reads all EDF files and returns 3 dataframes based on pyedfread. 
-    Uses metadata dictionary to label dataframes with subject and run information.
+    Reads all EDF files with pyedfread and returns a dataframe. 
+    Output dataframe merges all events, metadata and messages.
+    Relies on metadata dictionary (see get_filelist) to label the dataframe with 
+    subject and run information.
     
     See self.get_filelist to know more about filelist format.
     See pyedfread for more information on the output dataframes.
@@ -57,28 +59,37 @@ def get_fixmat(filelist):
     total_file = len(filelist)
     print("Receivied {} EDF files".format(total_file))
     #init 3 variables that will accumulate data frames as a list
-    s = [None] * total_file
     e = [None] * total_file
     m = [None] * total_file
     #Call pyedfread and concat different data frames as lists.
     for i,file in enumerate(filelist):
         filename                  = file[0]        
-        s[i], e[i], m[i] = edf.pread(filename,meta=file[1])
+        _, e[i], m[i] = edf.pread(filename,meta=file[1],ignore_samples=True,filter='all')
         #progress report
         sys.stdout.write('\r')        
-        sys.stdout.write("Reading file {}\n".format(filename))                                
-        sys.stdout.write("[%-20s] %d%%" % ('='*round((i+1)/total_file*20), round((i+1)/total_file*100)))
+        sys.stdout.write("Reading file {}\n".format(filename))
+        sys.stdout.write("[%-20s] %d%%\n" % ('='*round((i+1)/total_file*20), round((i+1)/total_file*100)))
         sys.stdout.flush()
         
     #convert lists to data frame.
-    samples = pd.concat(s, ignore_index=True)
-    events  = pd.concat(e, ignore_index=True)
+    events  = pd.concat(e, ignore_index=True)    
     messages= pd.concat(m, ignore_index=True)
+    #remove saccade information
+    events = events.loc[events["type"] == "fixation"]    
+    #merge what we is important from messages with events
+    #events = events.merge(messages.loc[:,['trial_id ','py_trial_marker', 'subject']],on='subject')
     
-    return samples, events, messages
+    #a small section of the messages that contains display coordinates per subject per line
+    #dummy  = messages.loc[messages["DISPLAY_COORDS"].notnull(),["subject","DISPLAY_COORDS"]]
+    #events = events.merge(dummy,on='subject')
 
-def bla():
-    print(3)
+    return events, messages
+#def fdm(df):
+#    import matplotlib.pyplot as plt
+#    import numpy as np
+#    stim_size = df["DISPLAY_COORDS"][0]
+#    plt.hist2d(df["gavx"],df["gavy"],range=np.array(stim_size).reshape(2,2).T,bins=[12,16])
+#    print(3)
 
 #def get_FDM()
 
