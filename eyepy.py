@@ -115,11 +115,16 @@ def fdm(df,downsample=10,method='hist2d'):
     if method == "hist2d":        
         return plt.hist2d(df["gavx"],df["gavy"],range=fdm_range,bins=fdm_bins)    
     elif method == "pandas":
-        bin_x = pd.cut(df.gavx, np.linspace(stim_size[0], stim_size[2], fdm_bins[0]))
-        bin_y = pd.cut(df.gavy, np.linspace(stim_size[1], stim_size[3], fdm_bins[1]))
+        bin_x = pd.cut(df.gavx, 
+                       np.linspace(stim_size[0], stim_size[2], fdm_bins[0]+1),
+                       labels=False)
+        
+        bin_y = pd.cut(df.gavy, 
+                       np.linspace(stim_size[1], stim_size[3], fdm_bins[1]+1),
+                       labels=False)
         return df.pivot_table(values='weight', #values of each fixation
-                             index=bin_x,     #x bin coordinate
-                             columns=bin_y,   #y bin coordinate
+                             index=bin_y,     #x bin coordinate
+                             columns=bin_x,   #y bin coordinate
                              aggfunc=sum,      #how to accumulate
                              fill_value=0)     #value when no counts
     
@@ -137,9 +142,6 @@ def stimulus_size(df):
         print("DataFrame contains heterogenous set of stimulus sizes!")
         raise SystemExit
 
-#def get_FDM()
-
-#def plot_FDM()
 
 #def pattern_similarity()
 
