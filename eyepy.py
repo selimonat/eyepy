@@ -2,7 +2,7 @@
 
 
 #FDM is Fixation Density Maps.
-
+import numpy as np
 #from pyedfread import edf
 
 def get_filelist(search_pattern):
@@ -53,7 +53,7 @@ def get_fixmat(filelist):
     See self.get_filelist to know more about filelist format.
     See pyedfread for more information on the output dataframes.
     '''
-    from pyedfread import edf
+    from pyedfread import edf    
     import pandas as pd
     import sys
     total_file = len(filelist)
@@ -86,19 +86,41 @@ def get_fixmat(filelist):
     return events
 def sanity_checks(df):
     #check whether all fixations have same stimulus size.
+    OK = False
+    if len(np.unique(df.DISPLAY_COORDS.as_matrix())) == 1:
+        OK = True
+        return OK
     #check number of fixations per subjects, show results as a bar plot
     #check number of fixations per conditions, show results as 2d count matrix.
 
-def fdm(df,method='bin'):
+def fdm(df,bins=10,method='hist2d'):
     '''
         Computes a Fixation Density Map (FDM) based on fixations in the DataFrame.
         
+        By default uses matplotlib's hist2d function. Specify which method to use 
+        with METHOD argument. Possible methods are pandas, hist2d.
+        
+        BINS specifies the number of bins on the vertical axis, the horizonal bin
+        size is deduced from stimulus size.
+        
+        Returns a 2D dataframe where each cell represents fixation counts at that 
+        spatial location.
     '''
-    import matplotlib.pyplot as plt
-    import numpy as np
-    stim_size = df["DISPLAY_COORDS"][0]
-    #lt.hist2d(df["gavx"],df["gavy"],range=np.array(stim_size).reshape(2,2).T,bins=[12,16])
-    print(3)
+#    import matplotlib.pyplot as plt
+#    import numpy as np
+#    stim_size = stimulus_size(df)
+#    if method == "hist2d":
+#        return plt.hist2d(df["gavx"],df["gavy"],range=np.array(stim_size).reshape(2,2).T,bins=[12,16])
+#        
+def stimulus_size(df):
+    '''
+        Checks whether stimulus sizes are consistent across participants.
+    '''
+    if len(np.unique(df.DISPLAY_COORDS.as_matrix())) == 1:
+        return df.DISPLAY_COORDS[0]
+    else:
+        print("DataFrame contains heterogenous set of stimulus sizes!")
+        raise SystemExit
 
 #def get_FDM()
 
