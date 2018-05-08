@@ -74,16 +74,16 @@ def get_fixmat(filelist):
     #convert lists to data frame.
     events  = pd.concat(e, ignore_index=True)    
     messages= pd.concat(m, ignore_index=True)
-    #remove saccade information
+    #remove saccade events.
     events = events.loc[events["type"] == "fixation"]    
-    #merge what we is important from messages with events
-    #events = events.merge(messages.loc[:,['trial_id ','py_trial_marker', 'subject']],on='subject')
+    #get trialid messages to assign conditions to events
+    events = events.merge(messages.loc[:,['trialid ', 'subject']],on='subject')
     
-    #a small section of the messages that contains display coordinates per subject per line
-    #dummy  = messages.loc[messages["DISPLAY_COORDS"].notnull(),["subject","DISPLAY_COORDS"]]
-    #events = events.merge(dummy,on='subject')
+    #assign stimulus size to fixations
+    dummy  = messages.loc[messages["DISPLAY_COORDS"].notnull(),["subject","DISPLAY_COORDS"]]
+    events = events.merge(dummy,on='subject')
 
-    return events, messages
+    return events
 #def fdm(df):
 #    import matplotlib.pyplot as plt
 #    import numpy as np
