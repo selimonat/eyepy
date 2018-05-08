@@ -3,6 +3,7 @@
 
 #FDM is Fixation Density Maps.
 import numpy as np
+import pandas as pd
 #from pyedfread import edf
 
 def get_filelist(search_pattern):
@@ -53,8 +54,7 @@ def get_fixmat(filelist):
     See self.get_filelist to know more about filelist format.
     See pyedfread for more information on the output dataframes.
     '''
-    from pyedfread import edf    
-    import pandas as pd
+    from pyedfread import edf        
     import sys
     total_file = len(filelist)
     print("Receivied {} EDF files".format(total_file))
@@ -83,16 +83,17 @@ def get_fixmat(filelist):
     dummy  = messages.loc[messages["DISPLAY_COORDS"].notnull(),["subject","DISPLAY_COORDS"]]
     events = events.merge(dummy,on='subject')
     
+    #remove the 0th fixation as it is on the fixation cross.
+    #add fixation weight.
+    events.loc[:,'weight'] = 1;
     return events
 
 def sanity_checks(df):
-    #check whether all fixations have same stimulus size.
-    OK = False
-    if len(np.unique(df.DISPLAY_COORDS.as_matrix())) == 1:
-        OK = True
-        return OK
-    #check number of fixations per subjects, show results as a bar plot
+    #check whether all fixation have the same stimulus size.
+    #check number of fixations per subjects, show results as a bar plot.
     #check number of fixations per conditions, show results as 2d count matrix.
+    #check for fixations outside the stimulus range.    
+    1
 
 def fdm(df,downsample=10,method='hist2d'):
     '''
@@ -109,11 +110,19 @@ def fdm(df,downsample=10,method='hist2d'):
     '''
     import matplotlib.pyplot as plt    
     stim_size = stimulus_size(df)
-    fdm_range = stim_size.reshape(2,2).T #adjust size for hist2d
+    fdm_range = stim_size.reshape(2,2).T #size of the count matrix
+    fdm_bins = (stim_size[[2,3]]+1 )/downsample #number of bins
+    if method == "hist2d":        
+        return plt.hist2d(df["gavx"],df["gavy"],range=fdm_range,bins=fdm_bins)    
+    elif method == "pandas":
+        bin_x = pd.cut(df.gavx, np.linspace(stim_size[0], stim_size[2], fdm_bins[0]))
+        bin_y = pd.cut(df.gavy, np.linspace(stim_size[1], stim_size[3], fdm_bins[1]))
+        return df.pivot_table(values='weight', #values of each fixation
+                             index=bin_x,     #x bin coordinate
+                             columns=bin_y,   #y bin coordinate
+                             aggfunc=sum,      #how to accumulate
+                             fill_value=0)     #value when no counts
     
-    if method == "hist2d":
-        fdm_bins = (stim_size[[2,3]]+1 )/downsample
-        return plt.hist2d(df["gavx"],df["gavy"],range=fdm_range,bins=fdm_bins)
 #        
 def stimulus_size(df):
     '''
