@@ -82,14 +82,23 @@ def get_fixmat(filelist):
     #assign stimulus size to fixations
     dummy  = messages.loc[messages["DISPLAY_COORDS"].notnull(),["subject","DISPLAY_COORDS"]]
     events = events.merge(dummy,on='subject')
-
+    
     return events
-#def fdm(df):
-#    import matplotlib.pyplot as plt
-#    import numpy as np
-#    stim_size = df["DISPLAY_COORDS"][0]
-#    plt.hist2d(df["gavx"],df["gavy"],range=np.array(stim_size).reshape(2,2).T,bins=[12,16])
-#    print(3)
+def sanity_checks(df):
+    #check whether all fixations have same stimulus size.
+    #check number of fixations per subjects, show results as a bar plot
+    #check number of fixations per conditions, show results as 2d count matrix.
+
+def fdm(df,method='bin'):
+    '''
+        Computes a Fixation Density Map (FDM) based on fixations in the DataFrame.
+        
+    '''
+    import matplotlib.pyplot as plt
+    import numpy as np
+    stim_size = df["DISPLAY_COORDS"][0]
+    #lt.hist2d(df["gavx"],df["gavy"],range=np.array(stim_size).reshape(2,2).T,bins=[12,16])
+    print(3)
 
 #def get_FDM()
 
