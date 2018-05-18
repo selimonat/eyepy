@@ -4,6 +4,7 @@
 #FDM is Fixation Density Maps.
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt    
 #from pyedfread import edf
 
 def get_filelist(search_pattern):
@@ -81,6 +82,7 @@ def get_fixmat(filelist):
     
     #assign stimulus size to fixations
     dummy  = messages.loc[messages["DISPLAY_COORDS"].notnull(),["subject","DISPLAY_COORDS"]]
+    #add SYN
     events = events.merge(dummy,on='subject')
     
     #remove the 0th fixation as it is on the fixation cross.
@@ -90,7 +92,7 @@ def get_fixmat(filelist):
     #steps for cleaning.
     #shift time stamps
     #remove unnecessary columns
-    #crop fixations outside of a rect
+    #crop fixations outside of a rect ==> should update stimulus size.
     #remove first fixations.
 
 def sanity_checks(df):
@@ -100,41 +102,36 @@ def sanity_checks(df):
     #check for fixations outside the stimulus range.    
     1
 
-def fdm(df,downsample=10,method='hist2d'):
+def fdm(df,downsample=100):
     '''
         Computes a Fixation Density Map (FDM) based on fixations in the DataFrame.
         
-        By default uses matplotlib's hist2d function. Specify which method to use 
-        with METHOD argument. Possible methods are pandas, hist2d.
+        Uses matplotlib's hist2d function.
         
         DOWNSAMPLE is used to calculate the number of bins using
         bin = stim_size/downsample.
         
         Returns a 2D dataframe where each cell represents fixation counts at that 
         spatial location.
+    '''    
+    stim_size = stimulus_size(df)               #swap x and y so that hist2d gives nicely oriented FDMs.
+    fdm_range = stim_size.reshape(2,2).T        #size of the count matrix
+    fdm_bins = (stim_size[[2,3]]+1 )/downsample #number of bins    
+    fdm, xedges, yedges, bla = plt.hist2d(df["gavx"],df["gavy"],range=fdm_range,bins=fdm_bins)
+    return pd.DataFrame(fdm)
+    #return fdm, xedges, yedges
+    
+def plot(df,path_stim='',downsample=100):
     '''
-    import matplotlib.pyplot as plt    
-    stim_size = stimulus_size(df)
-    fdm_range = stim_size.reshape(2,2).T #size of the count matrix
-    fdm_bins = (stim_size[[2,3]]+1 )/downsample #number of bins
-    if method == "hist2d":        
-        return plt.hist2d(df["gavx"],df["gavy"],range=fdm_range,bins=fdm_bins)    
-    elif method == "pandas":
-        bin_x = pd.cut(df.gavx, 
-                       np.linspace(stim_size[0], stim_size[2], fdm_bins[0]+1),
-                       labels=False)
-        
-        bin_y = pd.cut(df.gavy, 
-                       np.linspace(stim_size[1], stim_size[3], fdm_bins[1]+1),
-                       labels=False)
-        return df.pivot_table(values='weight', #values of each fixation
-                             index=bin_y,     #x bin coordinate
-                             columns=bin_x,   #y bin coordinate
-                             aggfunc=sum,      #how to accumulate
-                             fill_value=0)     #value when no counts
-def plot(df):
+    Plots fixation counts and optinally overlays on the stimulus"
+    '''
+    #solve the problem with spyder that prevents two images to be overlaid.
+    img=plt.imread(path_stim)
+    plt.imshow(img,alpha=.5)    
     
-    
+    count,x,y = fdm(df,downsample)
+    plt.imshow(count.T,extent=[x[0],x[-1],y[0],y[-1]],alpha=.5)    
+    plt.show()    
 #        
 def stimulus_size(df):
     '''
@@ -150,7 +147,11 @@ def stimulus_size(df):
         raise SystemExit
 
 
-#def pattern_similarity()
+def pattern_similarity(df):
+    FPSA = 1-df.groupby("subject").apply(fdm).unstack(level=1).T.corr()
+    plt.imshow(FPSA.values)
+    plt.show()
+    return FPSA
 
 #def classification()
     #we will want to classify participants (not caring about conditions). 
