@@ -8,7 +8,7 @@ import pandas as pd
 
 def get_filelist(search_pattern):
     '''
-    Find files that will be used for the analysis and retrieves metadata about 
+    Find EDF files that will be used for the analysis and retrieves metadata about 
     participants and runs.
     
     Returns a tuple that stores information about EDF files. This includes 
@@ -87,6 +87,11 @@ def get_fixmat(filelist):
     #add fixation weight.
     events.loc[:,'weight'] = 1;
     return events
+    #steps for cleaning.
+    #shift time stamps
+    #remove unnecessary columns
+    #crop fixations outside of a rect
+    #remove first fixations.
 
 def sanity_checks(df):
     #check whether all fixation have the same stimulus size.
@@ -127,6 +132,8 @@ def fdm(df,downsample=10,method='hist2d'):
                              columns=bin_x,   #y bin coordinate
                              aggfunc=sum,      #how to accumulate
                              fill_value=0)     #value when no counts
+def plot(df):
+    
     
 #        
 def stimulus_size(df):
