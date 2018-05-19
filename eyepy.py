@@ -79,24 +79,26 @@ def get_fixmat(filelist):
     #convert lists to data frame.
     events  = pd.concat(e, ignore_index=True)    
     messages= pd.concat(m, ignore_index=True)
-    #get trialid messages to assign conditions to events
-    events = events.merge(messages.loc[:,['trialid ', 'py_trial_marker']],right_on='py_trial_marker',left_on='trial',how="left")
-    events = events.drop('py_trial_marker',axis=1)
+    #get trialid messages, and SYNCtime to assign conditions to events
+    events = events.merge(messages.loc[:,['trialid ', 'SYNCTIME', 'py_trial_marker']],right_on='py_trial_marker',left_on='trial',how="left")
+    #shift time stamps
+    events.start = events.start - events.SYNCTIME
+    events.end  = events.end  - events.SYNCTIME
+    #remove prestimulus fixation points
+    #index fixations   
+    #drop useless columns
+    events = events.drop(['SYNCTIME','py_trial_marker'],axis=1)
     
     #assign stimulus size to fixations
     dummy  = messages.loc[messages["DISPLAY_COORDS"].notnull(),["subject","DISPLAY_COORDS"]]
     events = events.merge(dummy,on='subject',how='left')
-    #add SYN
     
     #remove the 0th fixation as it is on the fixation cross.
     #add fixation weight.
     events.loc[:,'weight'] = 1;
     return events, messages
     #steps for cleaning.
-    #shift time stamps
-    #remove unnecessary columns
     #crop fixations outside of a rect ==> should update stimulus size.
-    #remove first fixations.
 
 def sanity_checks(df):
     #check whether all fixation have the same stimulus size.
