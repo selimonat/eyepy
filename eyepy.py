@@ -66,6 +66,10 @@ def get_fixmat(filelist):
     for i,file in enumerate(filelist):
         filename                  = file[0]        
         _, e[i], m[i] = edf.pread(filename,meta=file[1],ignore_samples=True,filter='all')
+        #remove saccade events.
+        e[i] = e[i].loc[e[i]["type"] == "fixation"]    
+        #take only useful columns and include the meta data
+        e[i] = e[i][list(file[1].keys())+['trial','gavx','gavy','start','end']]
         #progress report
         sys.stdout.write('\r')        
         sys.stdout.write("Reading file {}\n".format(filename))
@@ -75,20 +79,19 @@ def get_fixmat(filelist):
     #convert lists to data frame.
     events  = pd.concat(e, ignore_index=True)    
     messages= pd.concat(m, ignore_index=True)
-    #remove saccade events.
-    events = events.loc[events["type"] == "fixation"]    
     #get trialid messages to assign conditions to events
-    events = events.merge(messages.loc[:,['trialid ', 'subject']],on='subject')
+    events = events.merge(messages.loc[:,['trialid ', 'py_trial_marker']],right_on='py_trial_marker',left_on='trial',how="left")
+    events = events.drop('py_trial_marker',axis=1)
     
     #assign stimulus size to fixations
     dummy  = messages.loc[messages["DISPLAY_COORDS"].notnull(),["subject","DISPLAY_COORDS"]]
+    events = events.merge(dummy,on='subject',how='left')
     #add SYN
-    events = events.merge(dummy,on='subject')
     
     #remove the 0th fixation as it is on the fixation cross.
     #add fixation weight.
     events.loc[:,'weight'] = 1;
-    return events
+    return events, messages
     #steps for cleaning.
     #shift time stamps
     #remove unnecessary columns
