@@ -62,6 +62,9 @@ def get_fixmat(filelist):
     #init 3 variables that will accumulate data frames as a list
     e = [None] * total_file
     m = [None] * total_file
+    def addfix(df):
+        df["fix"] = range(df.shape[0])
+        return df
     #Call pyedfread and concat different data frames as lists.
     for i,file in enumerate(filelist):
         filename                  = file[0]        
@@ -70,6 +73,8 @@ def get_fixmat(filelist):
         e[i] = e[i].loc[e[i]["type"] == "fixation"]    
         #take only useful columns and include the meta data
         e[i] = e[i][list(file[1].keys())+['trial','gavx','gavy','start','end']]
+        #index fixations   
+        e[i] = e[i].groupby("trial").apply(addfix)
         #progress report
         sys.stdout.write('\r')        
         sys.stdout.write("Reading file {}\n".format(filename))
@@ -86,11 +91,6 @@ def get_fixmat(filelist):
     events.end  = events.end  - events.SYNCTIME
     #remove prestimulus fixation points
     events = events[events.start > 0]
-    #index fixations   
-    def addfix(df):
-        df["fix"] = range(df.shape[0])
-        return df
-    events = events.groupby("trial").apply(addfix)
     #drop useless columns
     events = events.drop(['SYNCTIME','py_trial_marker'],axis=1)
     
