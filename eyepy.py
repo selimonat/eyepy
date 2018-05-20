@@ -85,7 +85,12 @@ def get_fixmat(filelist):
     events.start = events.start - events.SYNCTIME
     events.end  = events.end  - events.SYNCTIME
     #remove prestimulus fixation points
+    events = events[events.start > 0]
     #index fixations   
+    def addfix(df):
+        df["fix"] = range(df.shape[0])
+        return df
+    events = events.groupby("trial").apply(addfix)
     #drop useless columns
     events = events.drop(['SYNCTIME','py_trial_marker'],axis=1)
     
