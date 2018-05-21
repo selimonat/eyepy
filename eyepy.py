@@ -70,11 +70,20 @@ def get_fixmat(filelist):
         filename                  = file[0]        
         _, e[i], m[i] = edf.pread(filename,meta=file[1],ignore_samples=True,filter='all')
         #remove saccade events.
-        e[i] = e[i].loc[e[i]["type"] == "fixation"]    
+        e[i]      = e[i].loc[e[i]["type"] == "fixation"]    
         #take only useful columns and include the meta data
-        e[i] = e[i][list(file[1].keys())+['trial','gavx','gavy','start','end']]
+        e[i]      = e[i][list(file[1].keys())+['trial','gavx','gavy','start','end']]
+        #get trialid messages, and SYNCtime to assign conditions to events
+        e[i]      = e[i].merge(m[i].loc[:,['trialid ', 'SYNCTIME', 'py_trial_marker']],right_on='py_trial_marker',left_on='trial',how="left")
+        #shift time stamps
+        e[i].start= e[i].start - e[i].SYNCTIME
+        e[i].end  = e[i].end   - e[i].SYNCTIME
+        #remove prestimulus fixation points
+        e[i]      = e[i][e[i].start > 0]
         #index fixations   
-        e[i] = e[i].groupby("trial").apply(addfix)
+        e[i]      = e[i].groupby("trial").apply(addfix)
+        #drop useless columns
+        e[i]      = e[i].drop(['SYNCTIME','py_trial_marker'],axis=1)
         #progress report
         sys.stdout.write('\r')        
         sys.stdout.write("Reading file {}\n".format(filename))
@@ -84,15 +93,6 @@ def get_fixmat(filelist):
     #convert lists to data frame.
     events  = pd.concat(e, ignore_index=True)    
     messages= pd.concat(m, ignore_index=True)
-    #get trialid messages, and SYNCtime to assign conditions to events
-    events = events.merge(messages.loc[:,['trialid ', 'SYNCTIME', 'py_trial_marker']],right_on='py_trial_marker',left_on='trial',how="left")
-    #shift time stamps
-    events.start = events.start - events.SYNCTIME
-    events.end  = events.end  - events.SYNCTIME
-    #remove prestimulus fixation points
-    events = events[events.start > 0]
-    #drop useless columns
-    events = events.drop(['SYNCTIME','py_trial_marker'],axis=1)
     
     #assign stimulus size to fixations
     dummy  = messages.loc[messages["DISPLAY_COORDS"].notnull(),["subject","DISPLAY_COORDS"]]
