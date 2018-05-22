@@ -94,13 +94,15 @@ def get_fixmat(filelist):
     events  = pd.concat(e, ignore_index=True)    
     messages= pd.concat(m, ignore_index=True)
     
-    #assign stimulus size to fixations
+    #assign stimulus size to fixations (this could actually be one single line)
     dummy  = messages.loc[messages["DISPLAY_COORDS"].notnull(),["subject","DISPLAY_COORDS"]]
     events = events.merge(dummy,on='subject',how='left')
     
     #remove the 0th fixation as it is on the fixation cross.
     #add fixation weight.
     events.loc[:,'weight'] = 1;
+    #remove white spaces from column names
+    events.rename(columns=str.strip,inplace=True)
     return events, messages
     #steps for cleaning.
     #crop fixations outside of a rect ==> should update stimulus size.
