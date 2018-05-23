@@ -1,5 +1,16 @@
-
-
+"""
+Field name conventions:
+    subject
+    run
+    trial
+    condition
+    x
+    y
+    start
+    stop
+    fix
+    weight
+"""
 
 #FDM is Fixation Density Maps.
 import numpy as np
@@ -9,26 +20,25 @@ import matplotlib.pyplot as plt
 
 def get_filelist(search_pattern):
     '''
-    Find EDF files that will be used for the analysis and retrieves metadata about 
-    participants and runs.
+    Find EDF files that will be used for the analysis and estimates metadata about 
+    participants and runs based on their path.
     
     Returns a tuple that stores information about EDF files. This includes 
-    filename, subject and run indices for each single EDF file.
+    filename, SUBJECT and RUN indices for each single EDF file.
     
     It will simply loop over all files found recursively in the 
     project_folder and guess subject and run indices from the path. If this 
     returns unexpected values have a look at the nested get_{subject,run} 
-    functions. It is strongly recommended that you create your own method to 
-    generate a tuple for your project, in case this fails (which will most 
-    likely happen).
+    functions. In case this fails (which will most likely happen), create your 
+    own method to generate a tuple for your specifics.
     
-    output: a list of tuples in the form [('filename', {"meta":'data'})]
+    Output: a list of tuples in the form [('filename', {'subject': N,'run':M})]
     
     Example:
     search_pattern = "/mnt/data/project_FPSA_FearGen/data/**/data.edf"
     eyepy.get_filelist(sp)
     [('/Users/onat/Documents/Experiments/NoS/data/sub001/run001/eye/data.edf',
-    {'run': '001', 'subject': '001'}),
+    {'run': 1, 'subject': 1}),
     '''
     import glob
     import re
@@ -45,14 +55,19 @@ def get_filelist(search_pattern):
         filelist += [(edf_path,{'subject': int(get_subject()), 'run': int(get_run())})]
     return filelist
 
-def get_fixmat(filelist):
+def get_fixmat(filelist,filter_fun=None):
     '''
-    Reads all EDF files with pyedfread and returns a dataframe. 
-    Output dataframe merges all events, metadata and messages.
-    Relies on metadata dictionary (see get_filelist) to label the dataframe with 
-    subject and run information.
+    Reads all EDF files with pyedfread and returns a merged dataframe.
     
-    See self.get_filelist to know more about filelist format.
+    Final dataframe consits of Event and Message dataframes (outputs of pyedfread).
+    
+    Metadata is used to label DataFrames from individual subjects and runs (see get_filelist).
+    
+    If no FILTER_FUN is provided, Message DataFrame is directly appended as is to events. 
+    In some cases one might desire to preprocess Message DataFrame before appending. 
+    In that case, the result of FILTER_FUN(messages) is appended.
+        
+    See get_filelist to know more about filelist format.
     See pyedfread for more information on the output dataframes.
     '''
     from pyedfread import edf        
@@ -62,28 +77,41 @@ def get_fixmat(filelist):
     #init 3 variables that will accumulate data frames as a list
     e = [None] * total_file
     m = [None] * total_file
+    #will be used to index fixation ranks below in df.groupby.apply combo
     def addfix(df):
         df["fix"] = range(df.shape[0])
         return df
     #Call pyedfread and concat different data frames as lists.
     for i,file in enumerate(filelist):
         filename                  = file[0]        
-        _, e[i], m[i] = edf.pread(filename,meta=file[1],ignore_samples=True,filter='all')
+        _, E, M       = edf.pread(filename,meta=file[1],ignore_samples=True,filter='all')
+        #just to be sure not to have any spaces on column names (this could be moved to pyedfread)
+        E.rename(columns=str.strip,inplace=True)
+        M.rename(columns=str.strip,inplace=True)
         #remove saccade events.
-        e[i]      = e[i].loc[e[i]["type"] == "fixation"]    
-        #take only useful columns and include the meta data
-        e[i]      = e[i][list(file[1].keys())+['trial','gavx','gavy','start','end']]
-        #get trialid messages, and SYNCtime to assign conditions to events
-        e[i]      = e[i].merge(m[i].loc[:,['trialid ', 'SYNCTIME', 'py_trial_marker']],right_on='py_trial_marker',left_on='trial',how="left")
-        #shift time stamps
-        e[i].start= e[i].start - e[i].SYNCTIME
-        e[i].end  = e[i].end   - e[i].SYNCTIME
-        #remove prestimulus fixation points
-        e[i]      = e[i][e[i].start > 0]
-        #index fixations   
-        e[i]      = e[i].groupby("trial").apply(addfix)
+        E             = E.loc[E["type"] == "fixation"]        
+        #take only useful columns, include the meta data columns as well.
+        E             = E[list(file[1].keys())+['trial','gavx','gavy','start','end']]
+        #get SYNCTIME (i.e. stim onsets) 
+        E             = E.merge(M.loc[:,['SYNCTIME', 'py_trial_marker']], right_on='py_trial_marker',left_on='trial',how="left")
+            #correct time stamps with SYNCTIME
+        E.start       = E.start - E.SYNCTIME
+        E.end         = E.end   - E.SYNCTIME
+            #remove prestimulus fixations
+        E             = E[E.start > 0]
+        #index fixations
+        E             = E.groupby("trial").apply(addfix)
+        #get display coordinates and calibration values
+        E             = E.append(M.loc[M.py_trial_marker == -1,['DISPLAY_COORDS', 'validation_result:','subject','run']])                
         #drop useless columns
-        e[i]      = e[i].drop(['SYNCTIME','py_trial_marker'],axis=1)
+        E             = E.drop(['SYNCTIME','py_trial_marker'],axis=1)
+        #get what we want from messages
+        if filter_fun != None:
+            m = filter_fun(M)
+            e[i]          = E.merge(m,left_on='trial',right_on='py_trial_marker',how='left')
+        else:
+            e[i]  = E
+        
         #progress report
         sys.stdout.write('\r')        
         sys.stdout.write("Reading file {}\n".format(filename))
@@ -91,28 +119,23 @@ def get_fixmat(filelist):
         sys.stdout.flush()
         
     #convert lists to data frame.
-    events  = pd.concat(e, ignore_index=True)    
-    messages= pd.concat(m, ignore_index=True)
-    
-    #assign stimulus size to fixations (this could actually be one single line)
-    dummy  = messages.loc[messages["DISPLAY_COORDS"].notnull(),["subject","DISPLAY_COORDS"]]
-    events = events.merge(dummy,on='subject',how='left')
-    
-    #remove the 0th fixation as it is on the fixation cross.
+    events  = pd.concat(e, ignore_index=True)                    
     #add fixation weight.
-    events.loc[:,'weight'] = 1;
-    #remove white spaces from column names
-    events.rename(columns=str.strip,inplace=True)
-    return events, messages
-    #steps for cleaning.
+    events.loc[:,'weight'] = 1;    
+    return events 
+    #remove the 0th fixation as it is on the fixation cross.
     #crop fixations outside of a rect ==> should update stimulus size.
+    #rename fields
 
 def sanity_checks(df):
-    #check whether all fixation have the same stimulus size.
-    #check number of fixations per subjects, show results as a bar plot.
+    #check for validation error
+    #check whether all fixation have the same stimulus size
+    stimulus_size
     #check number of fixations per conditions, show results as 2d count matrix.
-    #check for fixations outside the stimulus range.    
-    1
+    fix_count = df.pivot_table(index=["subject"],aggfunc=len,values='trial',columns=['deltacsp'])
+    #check for fixations outside the stimulus range.
+    
+    
 
 def fdm(df,downsample=100):
     '''
