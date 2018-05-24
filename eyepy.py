@@ -35,10 +35,10 @@ def get_filelist(search_pattern):
     Output: a list of tuples in the form [('filename', {'subject': N,'run':M})]
     
     Example:
-    search_pattern = "/mnt/data/project_FPSA_FearGen/data/**/data.edf"
-    eyepy.get_filelist(sp)
-    [('/Users/onat/Documents/Experiments/NoS/data/sub001/run001/eye/data.edf',
-    {'run': 1, 'subject': 1}),
+    search_pattern = "/mnt/data/project_FPSA_FearGen/data/**/p02/**/data.edf"
+    eyepy.get_filelist(search_pattern)
+    [('/mnt/data/project_FPSA_FearGen/data/sub027/p02/eye/data.edf',
+      {'run': 2, 'subject': 27}),...    
     '''
     import glob
     import re
@@ -120,7 +120,7 @@ def get_fixmat(filelist,filter_fun=None):
         
     #convert lists to data frame.
     events  = pd.concat(e, ignore_index=True)                    
-    #add fixation weight.
+    #add fixation weight (todo: add it only to trials > 0)
     events.loc[:,'weight'] = 1;    
     return events 
     #remove the 0th fixation as it is on the fixation cross.
@@ -128,13 +128,40 @@ def get_fixmat(filelist,filter_fun=None):
     #rename fields
 
 def sanity_checks(df):
-    #check for validation error
-    #check whether all fixation have the same stimulus size
-    stimulus_size
-    #check number of fixations per conditions, show results as 2d count matrix.
-    fix_count = df.pivot_table(index=["subject"],aggfunc=len,values='trial',columns=['deltacsp'])
-    #check for fixations outside the stimulus range.
+    """
+    conducts sanity checks on the data and reports. (1) calibration error. (2)
+    number of trials.
+    """
     
+    #check for calibration quality
+    V= df[['subject','validation_result:']].dropna()
+    V['validation_result:'] = V['validation_result:'].map(lambda x: x[0])        
+    error = V['validation_result:'].values
+    bad   = V.loc[V["validation_result:"] > .5,"subject"]
+    
+    plt.figure(figsize=(12, 8), dpi= 80, facecolor='w', edgecolor='k')
+    plt.subplot(2,2,1)
+    plt.hist(error)
+    plt.xlabel('Average Error ($^\circ$)')
+    plt.title('Calibration Quality')
+    ymin, ymax = plt.ylim()
+    plt.plot(np.repeat(np.mean(error),2),[ymin, ymax])
+    plt.box('off')
+    
+    report = "There are {} participants ({}) with a calibration error\nthat is more than \
+    half a degree. You might consider\nexcluding them from the analysis".format(len(bad),bad.values)
+    print(report)
+    #check number of fixations per conditions, show results as 2d count matrix.
+    fix_count = df.pivot_table(index=['subject'],columns='condition',values='trial',aggfunc=lambda x: len(np.unique(x)))
+    plt.subplot(2,2,2)
+    plt.imshow(fix_count)
+    plt.xlabel('Conditions')    
+    plt.ylabel('Participants')
+    plt.colorbar()
+    plt.title('#Fixations per Condition')
+    #check for fixations outside the stimulus range.
+    #check whether all fixation have the same stimulus size
+    stimulus_size    
     
 
 def fdm(df,downsample=100):
@@ -174,7 +201,7 @@ def stimulus_size(df):
         an error if not.
         (Note: This is slightly too slow I have the impression)
     '''
-    sizes = np.unique(df.DISPLAY_COORDS.as_matrix())
+    sizes = np.unique(df.DISPLAY_COORDS.dropna())
     if len(sizes) == 1:
         return np.array(sizes[0])
     else:
