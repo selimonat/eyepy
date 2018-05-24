@@ -160,7 +160,8 @@ def sanity_checks(df):
     plt.colorbar()
     plt.title('#Fixations per Condition')
     #check for fixations outside the stimulus range.
-    #check whether all fixation have the same stimulus size
+    #add scatter matrix with x,y values per subject
+	#check whether all fixation have the same stimulus size
     stimulus_size    
     
 
