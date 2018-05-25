@@ -89,7 +89,11 @@ def get_fixmat(filelist,filter_fun=None):
         E.rename(columns=str.strip,inplace=True)
         M.rename(columns=str.strip,inplace=True)
         #remove saccade events.
-        E             = E.loc[E["type"] == "fixation"]        
+        E             = E.loc[E["type"] == "fixation"]
+        #remove out of range fixation
+        rect          = M.DISPLAY_COORDS.dropna()[0]
+        valid_fix     = (E.gavx >= rect[0]) & (E.gavx <= rect[2]) & (E.gavy >= rect[1]) & (E.gavy <= rect[3])
+        E             = E.loc[valid_fix,:]
         #take only useful columns, include the meta data columns as well.
         E             = E[list(file[1].keys())+['trial','gavx','gavy','start','end']]
         #get SYNCTIME (i.e. stim onsets) 
@@ -161,6 +165,8 @@ def sanity_checks(df):
     plt.title('#Fixations per Condition')
     #check for fixations outside the stimulus range.
     #add scatter matrix with x,y values per subject
+    colors = df['subject'].transform(lambda x: (x-min(x))/(max(x)-min(x))).transform(lambda x: [x,0,1-x])
+    pd.tools.plotting.scatter_matrix(df[['gavx','gavy','fix']],c=colors,figsize=(15, 15), diagonal='hist',alpha=0.3,marker='o')
 	#check whether all fixation have the same stimulus size
     stimulus_size    
     
