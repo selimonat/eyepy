@@ -171,7 +171,7 @@ def sanity_checks(df):
     stimulus_size    
     
 
-def fdm(df,downsample=100):
+def fdm(df,downsample=100,stim_size=[0,0,1599,1199]):
     '''
         Computes a Fixation Density Map (FDM) based on fixations in the DataFrame.
         
@@ -182,17 +182,20 @@ def fdm(df,downsample=100):
         
         Returns a 2D dataframe where each cell represents fixation counts at that 
         spatial location.
+        
+        Example:
+            eyepy.fdm(df)            
     '''    
-    stim_size = stimulus_size(df)               #swap x and y so that hist2d gives nicely oriented FDMs.
+    stim_size = np.array(stim_size)
     fdm_range = stim_size.reshape(2,2).T        #size of the count matrix
-    fdm_bins = (stim_size[[2,3]]+1 )/downsample #number of bins    
+    fdm_bins  = (stim_size[[2,3]]+1 )/downsample #number of bins    
     fdm, xedges, yedges, bla = plt.hist2d(df["gavx"],df["gavy"],range=fdm_range,bins=fdm_bins)
     return pd.DataFrame(fdm)
     #return fdm, xedges, yedges
     
 def plot(df,path_stim='',downsample=100):
     '''
-    Plots fixation counts and optinally overlays on the stimulus"
+        Plots fixation counts and optinally overlays on the stimulus"
     '''
     #solve the problem with spyder that prevents two images to be overlaid.
     img=plt.imread(path_stim)
@@ -221,6 +224,14 @@ def pattern_similarity(df):
     plt.imshow(FPSA.values)
     plt.show()
     return FPSA
+
+def PCA(df,groupby,explained_variance=.95):
+    from sklearn import decomposition
+    M   = df.groupby(groupby).apply(fdm).unstack().T
+    pca = decomposition.PCA(explained_variance)
+    pca.fit(M)
+    pca.transform(M)
+    return pca
 
 #def classification()
     #we will want to classify participants (not caring about conditions). 
