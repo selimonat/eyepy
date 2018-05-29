@@ -226,6 +226,11 @@ def pattern_similarity(df):
     return FPSA
 
 def PCA(df,groupby,explained_variance=.95):
+    '''
+    Computes eigenvalue decomposition of eye-movement patterns based on fixation 
+    density maps stored in the df.groupby(groupby). Returns components that are 
+    sufficient to explain explained_variance% of variance.    
+    '''
     from sklearn import decomposition
     M   = df.groupby(groupby).apply(fdm).unstack().T
     pca = decomposition.PCA(explained_variance)
@@ -233,6 +238,19 @@ def PCA(df,groupby,explained_variance=.95):
     pca.transform(M)
     return pca
 
+from sklearn.base import BaseEstimator, TransformerMixin
+
+class FDM_generator(BaseEstimator, TransformerMixin):
+    def __init__(self,resolution):
+        self.resolution = resolution
+    def fit(self,X,y=None):        
+        return self
+    def transform(self,X,y=None):
+        density_maps   = X.groupby(y).apply(fdm).unstack().T
+        return density_maps
+        
+    
+    
 #def classification()
     #we will want to classify participants (not caring about conditions). 
     #or conditions 
