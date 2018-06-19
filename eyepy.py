@@ -225,30 +225,42 @@ def pattern_similarity(df):
     plt.show()
     return FPSA
 
-def PCA(df,groupby,explained_variance=.95):
+def PCA(df,groupby,explained_variance=.95,downsample=100):
     '''
     Computes eigenvalue decomposition of eye-movement patterns based on fixation 
-    density maps stored in the df.groupby(groupby). Returns components that are 
-    sufficient to explain explained_variance% of variance.    
+    density maps stored in the df.groupby(groupby).
+    Returns components that are sufficient to explain explained_variance% of 
+    variance (default = 95%).
+    Plots components. 
+    Use this function to visually investigate PCA components.
     '''
     from sklearn import decomposition
-    M   = df.groupby(groupby).apply(fdm).unstack().T
+    M   = df.groupby(groupby).apply(fdm,downsample=downsample).unstack().T
     pca = decomposition.PCA(explained_variance)
     pca.fit(M)
     pca.transform(M)
     return pca
 
 from sklearn.base import BaseEstimator, TransformerMixin
-
 class FDM_generator(BaseEstimator, TransformerMixin):
-    def __init__(self,resolution):
+    '''
+    Generates fixation density maps with a resolution as hyper-parameter.
+    '''    
+    def __init__(self,resolution=40):
         self.resolution = resolution
     def fit(self,X,y=None):        
         return self
-    def transform(self,X,y=None):
-        density_maps   = X.groupby(y).apply(fdm).unstack().T
+    def transform(self,X,y=None):        
+        density_maps   = X.groupby(y).apply(eyepy.fdm,downsample=self.resolution).unstack().T
+        ##convert it to values
         return density_maps
-        
+    
+from sklearn.pipeline import Pipeline
+from sklearn.pipeline import Pipeline
+num_pipeline = Pipeline([('fdm', FDM_generator()),
+                         ('pca', PCA(explained_variance)),
+                         ('std_scaler', StandardScaler()),
+                         ])            
     
     
 #def classification()
