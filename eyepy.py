@@ -19,20 +19,19 @@ import matplotlib.pyplot as plt
 #from pyedfread import edf
 
 def get_filelist(search_pattern):
-    '''
-    Find EDF files that will be used for the analysis and estimates metadata about 
-    participants and runs based on their path.
+    '''    
+    Returns a list of tuples that stores path and metadeta about EDF files found 
+    in the SEARCH_PATTERN.
     
-    Returns a tuple that stores information about EDF files. This includes 
-    filename, SUBJECT and RUN indices for each single EDF file.
+    For each EDF file found tuple contains its path, participant and run number.
     
-    It will simply loop over all files found recursively in the 
-    project_folder and guess subject and run indices from the path. If this 
-    returns unexpected values have a look at the nested get_{subject,run} 
-    functions. In case this fails (which will most likely happen), create your 
-    own method to generate a tuple for your specifics.
+    Metadata is recovered using the nested get_subject and get_run functions. 
+    You might need to change those depending on how you stored your data. In 
+    case this fails (which will most likely happen), create your own method to 
+    generate a tuple for your specifics.
     
-    Output: a list of tuples in the form [('filename', {'subject': N,'run':M})]
+    Returns: 
+        a list of tuples in the form [('filename', {'subject': N,'run':M})]
     
     Example:
     search_pattern = "/mnt/data/project_FPSA_FearGen/data/**/p02/**/data.edf"
@@ -42,6 +41,7 @@ def get_filelist(search_pattern):
     '''
     import glob
     import re
+    #two nested functions used to recover subject and run identities.
     def get_subject():
         m = re.search('((?<=sub)|(?<=s))\d{1,3}' , edf_path)
         return m.group()
@@ -59,7 +59,7 @@ def get_fixmat(filelist,filter_fun=None):
     '''
     Reads all EDF files with pyedfread and returns a merged dataframe.
     
-    Final dataframe consits of Event and Message dataframes (outputs of pyedfread).
+    Final dataframe consists of Event and Message dataframes (outputs of pyedfread).
     
     Metadata is used to label DataFrames from individual subjects and runs (see get_filelist).
     
@@ -255,12 +255,12 @@ class FDM_generator(BaseEstimator, TransformerMixin):
         ##convert it to values
         return density_maps
     
-from sklearn.pipeline import Pipeline
-from sklearn.pipeline import Pipeline
-num_pipeline = Pipeline([('fdm', FDM_generator()),
-                         ('pca', PCA(explained_variance)),
-                         ('std_scaler', StandardScaler()),
-                         ])            
+#from sklearn.pipeline import Pipeline
+#from sklearn.pipeline import Pipeline
+#num_pipeline = Pipeline([('fdm', FDM_generator()),
+#                         ('pca', PCA(explained_variance)),
+#                         ('std_scaler', StandardScaler()),
+#                         ])            
     
     
 #def classification()
