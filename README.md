@@ -43,9 +43,16 @@ df = eyepy.get_df(fl)
 
 # Example: Sanity Checks
 
+eyepy.sanity_checks(df)
 
-<img src="https://github.com/selimonat/eyepy/blob/master/doc/sanity_check01.png" height="400">
-<img src="https://github.com/selimonat/eyepy/blob/master/doc/sanity_check02.png" height="400">
+provides crucial information for assessing the quality of the data set.
+
+It shows a distribution of the calibration errors, and suggests which participants could be discarded based on the calibration error.
+<img src="https://github.com/selimonat/eyepy/blob/master/doc/sanity_check01.png" width="400">
+
+And second, it displays x, y and time information of each fixation point as scatter plots, which is useful to 
+ensure the good quality of the dataset.
+<img src="https://github.com/selimonat/eyepy/blob/master/doc/sanity_check02.png" width="400">
 
 
 
