@@ -41,7 +41,8 @@ EyePy relies on Pandas DataFrame to store and manipulate data.
 All EDF files in file_list are stored as a DataFrame in df.
 df = eyepy.get_df(fl)
 df.head(5)
-  DISPLAY_COORDS     end  fix        gavx        gavy  run   start  subject  \
+
+DISPLAY_COORDS     end  fix        gavx        gavy  run   start  subject  \
 0            NaN   491.0  0.0  846.900024  619.299988    2   365.0       27   
 1            NaN   693.0  1.0  737.900024  556.599976    2   534.0       27   
 2            NaN  1038.0  2.0  706.200012  543.900024    2   718.0       27   
