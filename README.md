@@ -40,28 +40,6 @@ Note that the run and participant IDs are automatically generated from the path.
 EyePy relies on Pandas DataFrame to store and manipulate data. 
 All EDF files in file_list are stored as a DataFrame in df.
 df = eyepy.get_df(fl)
-df.head(5)
-
-DISPLAY_COORDS     end  fix        gavx        gavy  run   start  subject  \
-0            NaN   491.0  0.0  846.900024  619.299988    2   365.0       27   
-1            NaN   693.0  1.0  737.900024  556.599976    2   534.0       27   
-2            NaN  1038.0  2.0  706.200012  543.900024    2   718.0       27   
-3            NaN  1214.0  3.0  844.200012  553.299988    2  1084.0       27   
-4            NaN  1438.0  4.0  718.299988  539.799988    2  1259.0       27   
-
-  trial validation_result:  file  condition  oddball  ucs  py_trial_marker  \
-0     1                NaN   3.0     -135.0      0.0  0.0              1.0   
-1     1                NaN   3.0     -135.0      0.0  0.0              1.0   
-2     1                NaN   3.0     -135.0      0.0  0.0              1.0   
-3     1                NaN   3.0     -135.0      0.0  0.0              1.0   
-4     1                NaN   3.0     -135.0      0.0  0.0              1.0   
-
-   weight  
-0       1  
-1       1  
-2       1  
-3       1  
-4       1  
 
 # Example: Sanity Checks
 
