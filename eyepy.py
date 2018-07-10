@@ -17,8 +17,9 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt    
 #from pyedfread import edf
-def __init__():
-    1
+
+
+
 def get_filelist(search_pattern):
     '''    
     Returns a list of tuples that stores path and metadeta about the EDF files found 
@@ -57,7 +58,7 @@ def get_filelist(search_pattern):
         filelist += [(edf_path,{'subject': int(get_subject()), 'run': int(get_run())})]
     return filelist
 
-def get_df(filelist,filter_fun=None):
+def get_df(filelist,filter_fun=None,):
     '''
     Reads all EDF files in the filelist (see get_filelist) tuple with pyedfread 
     and returns a merged dataframe where each row is one fixation.
@@ -132,6 +133,14 @@ def get_df(filelist,filter_fun=None):
     events  = pd.concat(e, ignore_index=True)                    
     #add fixation weight (todo: add it only to trials > 0)
     events.loc[:,'weight'] = 1;    
+    #now we can overwrite the DISPLAY_COORDINATES. But first we need to check that
+    #all files have the same DISPLAY_COORDINATES.
+    
+    #
+    
+    check_rect_size(events)
+                    
+    
     return events 
     #remove the 0th fixation as it is on the fixation cross.
     #crop fixations outside of a rect ==> should update stimulus size.
@@ -174,7 +183,7 @@ def sanity_checks(df):
     colors = df['subject'].transform(lambda x: (x-min(x))/(max(x)-min(x))).transform(lambda x: [x,0,1-x])
     pd.tools.plotting.scatter_matrix(df[['gavx','gavy','fix']],c=colors,figsize=(15, 15), diagonal='hist',alpha=0.3,marker='o')    
 	#check whether all fixation have the same stimulus size
-    stimulus_size    
+    check_rect_size(df)    
     
 
 def fdm(df,downsample=100,stim_size=[0,0,1599,1199]):
@@ -222,18 +231,49 @@ def plot(df,path_stim='',downsample=100):
     plt.imshow(count.T,extent=[x[0],x[-1],y[0],y[-1]],alpha=.5)    
     plt.show()    
     
-def stimulus_size(df):
+def check_rect_size(df,new_size=None):
     '''
-        Checks whether stimulus sizes are consistent across participants. Throws 
-        an error if not.
-        (Note: This is slightly too slow I have the impression)
+        Checks whether all stimulus rectangles are consistent across participants.
+        Else, throws RuntimeError.
+        If new_value given, replaces the old value. New_value represents the size of 
+        square rect, centrally positioned on the previous rect.
     '''
-    sizes = np.unique(df.DISPLAY_COORDS.dropna())
-    if len(sizes) == 1:
-        return np.array(sizes[0])
+    
+    #all rects present in the DF
+    rect = np.unique(df.DISPLAY_COORDS.dropna())
+    
+    if len(rect) == 1:                       # all EDF files have the same rect.
+        
+        print("Consistency check: All files have same stimulus size (rect).")        
+        if new_size is not None:             # replace values with a new one.
+            print('Will overwrite rect with new value')            
+            indices = df[pd.notnull(df["DISPLAY_COORDS"])].index
+            for i in list(indices):                    
+                df.at[i,"DISPLAY_COORDS"] = square_central_rect(rect[0],new_size)
+
+            check_rect_size(df)      # re-run self to have the correct output            
+            
+            
+        return np.array(rect[0])
+    else:        
+        msg = "DataFrame contains {} different stimulus rects:\n{}".format(len(rect),rect)
+        raise RuntimeError(msg)
+
+def square_central_rect(old_rect,w):
+    '''
+    Returns a new centrally located rect with size w based on the previous one.
+    '''
+    
+    import math
+    if w % 2 == 0:
+        midpoint_x = (old_rect[2])/2
+        midpoint_y = (old_rect[3])/2
+        return [math.ceil(midpoint_x-w/2),
+                math.ceil(midpoint_y-w/2),
+                math.floor(midpoint_x+w/2),
+                math.floor(midpoint_y+w/2)]
     else:
-        print("DataFrame contains heterogenous set of stimulus sizes!")
-        raise SystemExit
+        print("w must be an even number")
 
 def get_data(df):
     '''
