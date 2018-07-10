@@ -41,6 +41,46 @@ EyePy relies on Pandas DataFrame to store and manipulate data.
 All EDF files in file_list are stored as a DataFrame in df.
 df = eyepy.get_df(fl)
 
+In [35]: df.head(10)
+Out[35]: 
+  DISPLAY_COORDS     end  fix        gavx        gavy  run   start  subject  \
+0            NaN   491.0  0.0  846.900024  619.299988    2   365.0       27   
+1            NaN   693.0  1.0  737.900024  556.599976    2   534.0       27   
+2            NaN  1038.0  2.0  706.200012  543.900024    2   718.0       27   
+3            NaN  1214.0  3.0  844.200012  553.299988    2  1084.0       27   
+4            NaN  1438.0  4.0  718.299988  539.799988    2  1259.0       27   
+5            NaN   435.0  0.0  747.700012  658.599976    2   289.0       27   
+6            NaN   654.0  1.0  733.500000  552.500000    2   482.0       27   
+7            NaN   774.0  2.0  698.799988  538.799988    2   678.0       27   
+8            NaN  1100.0  3.0  760.400024  566.000000    2   970.0       27   
+9            NaN  1315.0  4.0  889.200012  533.599976    2  1146.0       27   
+
+  trial validation_result:  file  condition  oddball  ucs  py_trial_marker  \
+0     1                NaN   3.0     -135.0      0.0  0.0              1.0   
+1     1                NaN   3.0     -135.0      0.0  0.0              1.0   
+2     1                NaN   3.0     -135.0      0.0  0.0              1.0   
+3     1                NaN   3.0     -135.0      0.0  0.0              1.0   
+4     1                NaN   3.0     -135.0      0.0  0.0              1.0   
+5     2                NaN   4.0      -90.0      0.0  0.0              2.0   
+6     2                NaN   4.0      -90.0      0.0  0.0              2.0   
+7     2                NaN   4.0      -90.0      0.0  0.0              2.0   
+8     2                NaN   4.0      -90.0      0.0  0.0              2.0   
+9     2                NaN   4.0      -90.0      0.0  0.0              2.0   
+
+   weight  
+0       1  
+1       1  
+2       1  
+3       1  
+4       1  
+5       1  
+6       1  
+7       1  
+8       1  
+9       1 
+
+
+
 # Example: Sanity Checks
 
 eyepy.sanity_checks(df)
