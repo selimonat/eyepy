@@ -58,7 +58,7 @@ def get_filelist(search_pattern):
         filelist += [(edf_path,{'subject': int(get_subject()), 'run': int(get_run())})]
     return filelist
 
-def get_df(filelist,filter_fun=None,):
+def get_df(filelist,filter_fun=None,newrect=None):
     '''
     Reads all EDF files in the filelist (see get_filelist) tuple with pyedfread 
     and returns a merged dataframe where each row is one fixation.
@@ -96,11 +96,7 @@ def get_df(filelist,filter_fun=None,):
         E.rename(columns=str.strip,inplace=True)
         M.rename(columns=str.strip,inplace=True)
         #remove saccade events.
-        E             = E.loc[E["type"] == "fixation"]
-        #remove out of range fixation
-        rect          = M.DISPLAY_COORDS.dropna()[0]
-        valid_fix     = (E.gavx >= rect[0]) & (E.gavx <= rect[2]) & (E.gavy >= rect[1]) & (E.gavy <= rect[3])
-        E             = E.loc[valid_fix,:]
+        E             = E.loc[E["type"] == "fixation"]        
         #take only useful columns, include the meta data columns as well.
         E             = E[list(file[1].keys())+['trial','gavx','gavy','start','end']]
         #get SYNCTIME (i.e. stim onsets) 
@@ -132,13 +128,14 @@ def get_df(filelist,filter_fun=None,):
     #convert lists to data frame.
     events  = pd.concat(e, ignore_index=True)                    
     #add fixation weight (todo: add it only to trials > 0)
-    events.loc[:,'weight'] = 1;    
-    #now we can overwrite the DISPLAY_COORDINATES. But first we need to check that
-    #all files have the same DISPLAY_COORDINATES.
+    events.loc[:,'weight'] = 1
     
-    #
+    #Check and overwrite DISPLAY_COORDINATES. 
+    rect = check_rect_size(events,newrect)
     
-    check_rect_size(events)
+    #Remove out of range fixation data
+    valid_fix     = (E.gavx >= rect[0]) & (E.gavx <= rect[2]) & (E.gavy >= rect[1]) & (E.gavy <= rect[3])
+    E             = E.loc[valid_fix,:]
                     
     
     return events 
