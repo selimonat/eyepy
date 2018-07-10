@@ -131,12 +131,17 @@ def get_df(filelist,filter_fun=None,newrect=None):
     events.loc[:,'weight'] = 1
     
     #Check and overwrite DISPLAY_COORDINATES. 
-    rect = check_rect_size(events,newrect)
-    
-    #Remove out of range fixation data
-    valid_fix     = (E.gavx >= rect[0]) & (E.gavx <= rect[2]) & (E.gavy >= rect[1]) & (E.gavy <= rect[3])
-    E             = E.loc[valid_fix,:]
+#    rect = check_rect_size(events)
+    rect = check_rect_size(events,newrect)        
+#    #Remove out of range fixation data    
+    valid_fix     = (events.gavx >= rect[0]) &                      \
+                    (events.gavx <= rect[2]) &                      \
+                    (events.gavy >= rect[1]) &                      \
+                    (events.gavy <= rect[3]) | events.trial.isnull()
                     
+    print(sum(valid_fix))
+    events        = events.loc[valid_fix,:]
+#                    
     
     return events 
     #remove the 0th fixation as it is on the fixation cross.
@@ -244,15 +249,14 @@ def check_rect_size(df,new_size=None):
     if len(rect) == 1:                       # all EDF files have the same rect.
         
         print("Consistency check: All files have same stimulus size (rect).")        
-        if new_size is not None:             # replace values with a new one.
-            print('Will overwrite rect with new value')            
-            indices = df[pd.notnull(df["DISPLAY_COORDS"])].index
+        if new_size is not None:             # replace values with a new one.            
+            rect[0] = square_central_rect(rect[0],new_size)
+            print('Will overwrite rect with new value: {}'.format(rect[0]))
+            
+            indices  = df[pd.notnull(df["DISPLAY_COORDS"])].index            
             for i in list(indices):                    
-                df.at[i,"DISPLAY_COORDS"] = square_central_rect(rect[0],new_size)
-
-            check_rect_size(df)      # re-run self to have the correct output            
-            
-            
+                df.at[i,"DISPLAY_COORDS"] = rect[0]
+                
         return np.array(rect[0])
     else:        
         msg = "DataFrame contains {} different stimulus rects:\n{}".format(len(rect),rect)
