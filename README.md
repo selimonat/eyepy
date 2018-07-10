@@ -44,8 +44,8 @@ df = eyepy.get_df(fl)
 # Example: Sanity Checks
 
 
-<img src="https://github.com/selimonat/eyepy/blob/master/doc/sanity_check_01.png" height="400">
-<img src="https://github.com/selimonat/eyepy/blob/master/doc/sanity_check_02.png" height="400">
+<img src="https://github.com/selimonat/eyepy/blob/master/doc/sanity_check01.png" height="400">
+<img src="https://github.com/selimonat/eyepy/blob/master/doc/sanity_check02.png" height="400">
 
 
 
