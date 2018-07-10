@@ -156,7 +156,7 @@ def sanity_checks(df):
     bad   = V.loc[V["validation_result:"] > .5,"subject"]
     
     plt.figure(figsize=(12, 8), dpi= 80, facecolor='w', edgecolor='k')
-    plt.subplot(2,2,1)
+    plt.subplot(1,2,1)
     plt.hist(error)
     plt.xlabel('Average Error ($^\circ$)')
     plt.title('Calibration Quality')
@@ -169,7 +169,7 @@ def sanity_checks(df):
     print(report)
     #check number of fixations per conditions, show results as 2d count matrix.
     fix_count = df.pivot_table(index=['subject'],columns='condition',values='trial',aggfunc=lambda x: len(np.unique(x)))
-    plt.subplot(2,2,2)
+    plt.subplot(1,2,2)
     plt.imshow(fix_count)
     plt.xlabel('Conditions')    
     plt.ylabel('Participants')
@@ -178,9 +178,11 @@ def sanity_checks(df):
     #check for fixations outside the stimulus range.
     #add scatter matrix with x,y values per subject
     colors = df['subject'].transform(lambda x: (x-min(x))/(max(x)-min(x))).transform(lambda x: [x,0,1-x])
-    pd.tools.plotting.scatter_matrix(df[['gavx','gavy','fix']],c=colors,figsize=(15, 15), diagonal='hist',alpha=0.3,marker='o')    
+    
+        
+    pd.tools.plotting.scatter_matrix(df[['gavx','gavy','fix']],c=colors, diagonal='hist',alpha=0.3,marker='o')    
 	#check whether all fixation have the same stimulus size
-    check_rect_size(df)    
+    check_rect_size(df)
     
 
 def fdm(df,downsample=100,stim_size=[0,0,1599,1199]):
