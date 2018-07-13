@@ -218,11 +218,9 @@ def fdm(df,downsample=100):
                                        df["gavy"].dropna().values,
                                        range=fdm_range,
                                        bins=fdm_bins)
+        
+    return pd.DataFrame(fdm)
     
-    
-    #print(fdm)
-    return pd.DataFrame(fdm), xedges, yedges,fdm_range
-    #return fdm, xedges, yedges
     
     
 def plot_subject(df):
@@ -232,7 +230,7 @@ def plot_subject(df):
     """
     M             = df.group_by(['subject']).apply(fdm)
     t_participant = len(df['subject'].unique())
-    
+    plt.subplot
     
     
     
