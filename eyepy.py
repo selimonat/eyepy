@@ -221,16 +221,21 @@ def fdm(df,downsample=100):
         
     return pd.DataFrame(fdm)
     
-    
-    
+        
 def plot_subject(df):
     """
     Produce a grid of subplot with and plot single participant average
     FDMs
     """
-    M             = df.group_by(['subject']).apply(fdm)
-    t_participant = len(df['subject'].unique())
-    plt.subplot
+    c =0
+    for name,group in df.groupby(['subject']):
+        c =c +1
+        M = fdm(group)
+        plt.subplot(3,3,c)
+        plt.imshow(M.T)
+        plt.title("S: {}".format(name))
+    
+        
     
     
     
