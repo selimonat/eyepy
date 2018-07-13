@@ -203,22 +203,39 @@ def fdm(df,downsample=100):
         spatial location.
         
         Example:
-           fdm =  eyepy.fdm(df)            
+           fdm =  eyepy.fdm(df)
     '''    
-    stim_size = check_rect_size(df)              #size of rect
-    fdm_range = stim_size.reshape(2,2).T         #size of the count matrix
-    fdm_bins  = (stim_size[[2,3]]+1 )/downsample #number of bins    
+    rect      = check_rect_size(df)              #size of rect
+    fdm_range = rect.reshape(2,2).T              #size of the count matrix
+    fdm_range[:,1] = fdm_range[:,1] + 1
+    stim_size = get_rect_size(df)                #stim size
+    fdm_bins  = stim_size/downsample #number of bins            
     
-    print(stim_size)
     print(fdm_range)
     print(fdm_bins)
+
+    fdm,xedges,yedges = np.histogram2d(df["gavx"].dropna().values,
+                                       df["gavy"].dropna().values,
+                                       range=fdm_range,
+                                       bins=fdm_bins)
     
-    fdm, xedges, yedges, bla = plt.hist2d(df["gavx"].values,
-                                          df["gavy"].values,
-                                          range=fdm_range,
-                                          bins=fdm_bins)
-    return pd.DataFrame(fdm)
+    
+    #print(fdm)
+    return pd.DataFrame(fdm), xedges, yedges,fdm_range
     #return fdm, xedges, yedges
+    
+    
+def plot_subject(df):
+    """
+    Produce a grid of subplot with and plot single participant average
+    FDMs
+    """
+    M             = df.group_by(['subject']).apply(fdm)
+    t_participant = len(df['subject'].unique())
+    
+    
+    
+    
     
 def plot(df,path_stim='',downsample=100):
     '''
@@ -235,6 +252,15 @@ def plot(df,path_stim='',downsample=100):
     plt.imshow(count.T,extent=[x[0],x[-1],y[0],y[-1]],alpha=.5)    
     plt.show()    
     
+def get_rect_size(df):
+    """
+    Returns the span of the rect in df as a 1 x 2 tuple where 
+    (vertical span, horizontal span)
+    """
+    rect = check_rect_size(df)
+    return np.array((rect[3]-rect[1]+1,rect[2]-rect[0]+1))
+        
+        
 def check_rect_size(df,new_size=None):
     '''
         Checks whether all stimulus rectangles are consistent across participants.
@@ -261,6 +287,9 @@ def check_rect_size(df,new_size=None):
     else:        
         msg = "DataFrame contains {} different stimulus rects:\n{}".format(len(rect),rect)
         raise RuntimeError(msg)
+
+
+
 
 def square_central_rect(old_rect,w):
     '''
