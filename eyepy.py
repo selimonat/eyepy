@@ -190,7 +190,7 @@ def sanity_checks(df):
     check_rect_size(df)
     
 
-def fdm(df,downsample=100,stim_size=[0,0,1599,1199]):
+def fdm(df,downsample=100):
     '''
         Computes a Fixation Density Map (FDM) based on fixations in the DataFrame.
         
@@ -205,8 +205,8 @@ def fdm(df,downsample=100,stim_size=[0,0,1599,1199]):
         Example:
            fdm =  eyepy.fdm(df)            
     '''    
-    stim_size = np.array(stim_size)
-    fdm_range = stim_size.reshape(2,2).T        #size of the count matrix
+    stim_size = check_rect_size(df)              #size of rect
+    fdm_range = stim_size.reshape(2,2).T         #size of the count matrix
     fdm_bins  = (stim_size[[2,3]]+1 )/downsample #number of bins    
     
     print(stim_size)
