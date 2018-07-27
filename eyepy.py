@@ -221,23 +221,21 @@ def fdm(df,downsample=100):
         
     return pd.DataFrame(fdm)
     
-        
-def plot_subject(df):
+def plot_group(G):
     """
     Produce a grid of subplot with and plot single participant average
     FDMs
-    """
-    c =0
-    for name,group in df.groupby(['subject']):
-        c =c +1
-        M = fdm(group)
-        plt.subplot(3,3,c)
-        plt.imshow(M.T)
-        plt.title("S: {}".format(name))
+    G = df.groupby(['subject']);
+    eyepy.plot_subject(G)
+    """    
     
-        
-    
-    
+    tpanel = np.ceil(np.sqrt(10))
+    for panel,g in enumerate(G):
+        group_name = g[0]
+        df         = g[1]
+        plt.subplot(tpanel,tpanel,panel+1)
+        plt.title(group_name)
+        plot(df)
     
     
 def plot(df,path_stim='',downsample=100):
@@ -250,8 +248,8 @@ def plot(df,path_stim='',downsample=100):
         plt.imshow(img,alpha=.5)    
     
     count = fdm(df,downsample)
-    x     = fdm.index.values[0], fdm.index.values[-1]
-    y     = fdm.columns.values[0], fdm.columns.values[-1]
+    x     = count.index.values[0], count.index.values[-1]
+    y     = count.columns.values[0], count.columns.values[-1]
     plt.imshow(count.T,extent=[x[0],x[-1],y[0],y[-1]],alpha=.5)    
     plt.show()    
     
