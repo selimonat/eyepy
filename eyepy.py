@@ -229,6 +229,26 @@ def fdm(df,downsample=100):
     df.columns.name = "columns"
     return df
 
+
+def group2dataset(G):
+    """
+        Transforms a Group (i.e. dataframe.groupby object) to a standard dataset 
+        format, such as MNIST dataset that can be downloaded.
+        out["data"] is one row per sample and a column per feature (pixel or pc)
+        out["target"] contains the group labels values. If DataFrame is grouped
+        by subjects, it contaisns subject indices.
+    """
+    data   = G.apply(fdm).unstack().values
+    labels = G.groups.keys();
+    
+    out = {'COL_NAMES' : [],
+           'DESCR'  :  '',
+           'data'   : data,
+           'targets': labels}
+    
+    return out
+    
+    
     
 def plot_group(G):
     """
@@ -287,10 +307,23 @@ def kmeans(G):
             citem[this_cluster] += 1            
             print(this_cluster)
             print(citem[this_cluster])
-            plt.sca(axarr[this_cluster,int(citem[this_cluster]-1]))
+            plt.sca(axarr[this_cluster,int(citem[this_cluster]-1)])
             eyepy.plot(g[1])
 
     
+def tsne(G):
+    from sklearn import manifold
+    
+    x      = G.apply(fdm).unstack().values    
+    tsne   = manifold.TSNE(n_components=2, init='pca', random_state=0)
+
+    X_tsne = tsne.fit_transform(x)
+    
+    plot_embedding(X_tsne,
+                   "t-SNE embedding of the digits (time %.2fs)" %
+                   (time() - t0))
+    
+    plt.show()
     
     
 def get_rect_size(df):
