@@ -73,6 +73,9 @@ def get_df(filelist,filter_fun=None,newrect=None):
     Event DataFrame. In some cases one might desire to preprocess Message 
     DataFrame before appending. In that case, the result of FILTER_FUN(messages) 
     is appended.
+    
+    Specify NEWRECT to discard pixels outside of a square central region. NEWRECT 
+    of 500 would discard all data outside of a square of 500x500 pixels.
         
     See get_filelist to know more about filelist format.
     See pyedfread for more information on the output dataframes.
@@ -218,13 +221,19 @@ def fdm(df,downsample=100):
                                        df["gavy"].dropna().values,
                                        range=fdm_range,
                                        bins=fdm_bins)
-        
-    return pd.DataFrame(fdm)
+     
+    #return fdm, xedges, yedges
+    #return pd.DataFrame(fdm)                     # another option is just to return numpy array
+    df = pd.DataFrame(fdm, index=xedges[:-1], columns=yedges[:-1])
+    df.index.name   = "rows"
+    df.columns.name = "columns"
+    return df
+
     
 def plot_group(G):
     """
     Produce a grid of subplot with and plot single participant average
-    FDMs
+    FDMs.
     G = df.groupby(['subject']);
     eyepy.plot_subject(G)
     """    
@@ -236,7 +245,7 @@ def plot_group(G):
         plt.subplot(tpanel,tpanel,panel+1)
         plt.title(group_name)
         plot(df)
-    
+
     
 def plot(df,path_stim='',downsample=100):
     '''
@@ -252,6 +261,9 @@ def plot(df,path_stim='',downsample=100):
     y     = count.columns.values[0], count.columns.values[-1]
     plt.imshow(count.T,extent=[x[0],x[-1],y[0],y[-1]],alpha=.5)    
     plt.show()    
+    
+#def kmeans(df)
+        
     
 def get_rect_size(df):
     """
