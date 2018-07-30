@@ -262,8 +262,36 @@ def plot(df,path_stim='',downsample=100):
     plt.imshow(count.T,extent=[x[0],x[-1],y[0],y[-1]],alpha=.5)    
     plt.show()    
     
-#def kmeans(df)
-        
+def kmeans(G):
+    
+    from sklearn.cluster import KMeans
+    #transform FDM to (n_samples,n_features), where n_samples is the number of
+    # subjects, trials etc, and n_features is the number of pixels.
+    x = G.apply(fdm).unstack().values
+
+    t_cluster = 3
+    
+    # K Means Cluster
+    model = KMeans(n_clusters=t_cluster)
+    model.fit(x)
+
+    #largest number of items in any cluster
+    _,t = np.unique(model.labels_,return_counts=True)
+    max_count = max(t)
+    
+    #    
+    f, axarr = plt.subplots(t_cluster, max_count)
+    citem    = np.zeros([t_cluster,1],dtype=np.int8)
+    for i,g in enumerate(G):
+            this_cluster         = model.labels_[i]
+            citem[this_cluster] += 1            
+            print(this_cluster)
+            print(citem[this_cluster])
+            plt.sca(axarr[this_cluster,int(citem[this_cluster]-1]))
+            eyepy.plot(g[1])
+
+    
+    
     
 def get_rect_size(df):
     """
