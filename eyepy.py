@@ -18,6 +18,8 @@ import pandas as pd
 import matplotlib.pyplot as plt    
 #from pyedfread import edf
 
+from sklearn import (manifold, datasets, decomposition, ensemble,discriminant_analysis, random_projection)
+from time import time
 
 
 def get_filelist(search_pattern):
@@ -239,7 +241,7 @@ def group2dataset(G):
         by subjects, it contaisns subject indices.
     """
     data   = G.apply(fdm).unstack().values
-    labels = G.groups.keys();
+    labels = list(G.groups.keys());
     
     out = {'COL_NAMES' : [],
            'DESCR'  :  '',
@@ -247,8 +249,6 @@ def group2dataset(G):
            'targets': labels}
     
     return out
-    
-    
     
 def plot_group(G):
     """
@@ -282,6 +282,55 @@ def plot(df,path_stim='',downsample=100):
     plt.imshow(count.T,extent=[x[0],x[-1],y[0],y[-1]],alpha=.5)    
     plt.show()    
     
+# Scale and visualize the embedding vectors
+def plot_embedding(X, target, title=None):
+    """
+    Plots the results of different manifold learning algorithms. Assumes 2-d.
+    """
+    
+    x_min, x_max = np.min(X, 0), np.max(X, 0)
+    X = (X - x_min) / (x_max - x_min)
+
+    plt.figure()
+    plt.subplot(111)
+    for i in range(X.shape[0]):
+        plt.text(X[i, 0], X[i, 1], str(target[i]),
+                 color=plt.cm.Set1(target[i] / 10.),
+                 fontdict={'weight': 'bold', 'size': 9})    
+    
+    plt.xticks([]), plt.yticks([])
+    if title is not None:
+        plt.title(title)
+
+
+
+def decompose(dataset):
+    
+    X  = dataset["data"]
+    y  = dataset["targets"]
+    t0 = time()
+    
+    X_decomposed = decomposition.TruncatedSVD(n_components=2).fit_transform(X)
+    
+    #X_decomposed = discriminant_analysis.LinearDiscriminantAnalysis(n_components=2).fit_transform(X, y)
+    
+    tsne = manifold.TSNE(n_components=2, init='pca', random_state=0)
+    X_decomposed = tsne.fit_transform(X)
+    
+    
+    embedder = manifold.SpectralEmbedding(n_components=2, random_state=0,eigen_solver="arpack")
+    X_decomposed = embedder.fit_transform(X)
+
+    
+    clf          = manifold.MDS(n_components=2, n_init=1, max_iter=100)
+    X_decomposed = clf.fit_transform(X)
+    
+    
+    plot_embedding(X_decomposed,y,
+               "Principal Components projection of the digits (time %.2fs)" %
+               (time() - t0))
+    return X_decomposed
+    
 def kmeans(G):
     
     from sklearn.cluster import KMeans
@@ -308,20 +357,18 @@ def kmeans(G):
             print(this_cluster)
             print(citem[this_cluster])
             plt.sca(axarr[this_cluster,int(citem[this_cluster]-1)])
-            eyepy.plot(g[1])
+            plot(g[1])
 
     
 def tsne(G):
-    from sklearn import manifold
+    
     
     x      = G.apply(fdm).unstack().values    
     tsne   = manifold.TSNE(n_components=2, init='pca', random_state=0)
 
     X_tsne = tsne.fit_transform(x)
     
-    plot_embedding(X_tsne,
-                   "t-SNE embedding of the digits (time %.2fs)" %
-                   (time() - t0))
+    plot_embedding(X_tsne,targets,"t-SNE embedding of the digits")
     
     plt.show()
     
