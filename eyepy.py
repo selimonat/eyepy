@@ -16,10 +16,16 @@ Field name conventions:
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt    
-#from pyedfread import edf
+import math
+from pyedfread import edf        
+import sys
 
 from sklearn import (manifold, datasets, decomposition, ensemble,discriminant_analysis, random_projection)
 from time import time
+
+from joblib import Memory
+
+memory = Memory(cachedir='/tmp/', verbose=1)
 
 
 def get_filelist(search_pattern):
@@ -60,6 +66,7 @@ def get_filelist(search_pattern):
         filelist += [(edf_path,{'subject': int(get_subject()), 'run': int(get_run())})]
     return filelist
 
+@memory.cache
 def get_df(filelist,filter_fun=None,newrect=None):
     '''
     Reads all EDF files in the filelist (see get_filelist) tuple with pyedfread 
@@ -82,8 +89,7 @@ def get_df(filelist,filter_fun=None,newrect=None):
     See get_filelist to know more about filelist format.
     See pyedfread for more information on the output dataframes.
     '''
-    from pyedfread import edf        
-    import sys
+    
     total_file = len(filelist)
     print("Receivied {} EDF files".format(total_file))
     #init 3 variables that will accumulate data frames as a list
@@ -114,7 +120,12 @@ def get_df(filelist,filter_fun=None,newrect=None):
         #index fixations
         E             = E.groupby("trial").apply(addfix)
         #get display coordinates and calibration values
-        E             = E.append(M.loc[M.py_trial_marker == -1,['DISPLAY_COORDS', 'validation_result:','subject','run']])                
+        
+        E             = E.append(M.loc[M.py_trial_marker == -1,['validation_result:','subject','run']])
+        rect          = M.loc[M.py_trial_marker == -1,['DISPLAY_COORDS']]
+        
+        E['DISPLAY_COORDS'] = rect.DISPLAY_COORDS[0]
+        print(E)
         #drop useless columns
         E             = E.drop(['SYNCTIME','py_trial_marker'],axis=1)
         #get what we want from messages using filter_fun or simply discard messages.
@@ -135,9 +146,9 @@ def get_df(filelist,filter_fun=None,newrect=None):
     #add fixation weight (todo: add it only to trials > 0)
     events.loc[:,'weight'] = 1
     
-    #Check and overwrite DISPLAY_COORDINATES. 
-#    rect = check_rect_size(events)
-    rect = check_rect_size(events,newrect)        
+    #Check whether all data has same DISPLAY_COORDINATES 
+    #Overwrite DISPLAY_COORDINATES if required. 
+    rect = set_rect(events,newrect)
 #    #Remove out of range fixation data    
     valid_fix     = (events.gavx >= rect[0]) &                      \
                     (events.gavx <= rect[2]) &                      \
@@ -191,8 +202,9 @@ def sanity_checks(df):
     
         
     pd.tools.plotting.scatter_matrix(df[['gavx','gavy','fix']],c=colors, diagonal='hist',alpha=0.3,marker='o')    
-	#check whether all fixation have the same stimulus size
-    check_rect_size(df)
+	
+    #check whether all fixation have the same stimulus size
+    check_rect(df)
     
 
 def fdm(df,downsample=100):
@@ -360,29 +372,29 @@ def kmeans(G):
             plot(g[1])
 
     
-def tsne(G):
-    
-    
-    x      = G.apply(fdm).unstack().values    
-    tsne   = manifold.TSNE(n_components=2, init='pca', random_state=0)
-
-    X_tsne = tsne.fit_transform(x)
-    
-    plot_embedding(X_tsne,targets,"t-SNE embedding of the digits")
-    
-    plt.show()
-    
-    
-def get_rect_size(df):
+def get_rect_size():
     """
     Returns the span of the rect in df as a 1 x 2 tuple where 
     (vertical span, horizontal span)
     """
-    rect = check_rect_size(df)
-    return np.array((rect[3]-rect[1]+1,rect[2]-rect[0]+1))
+    rect = get_rect()
+    if rect is not None:
+        return np.array((rect[3]-rect[1]+1,rect[2]-rect[0]+1))
+       
+def check_rect():
+    """
+        returns true if global RECT is set.        
+    """
+    return get_rect() != None
+
+def get_rect():
+    """
+        reads the global variable DISPLAY_COORDINATES
+    """
+    global DISPLAY_COORDINATES 
+    return DISPLAY_COORDINATES 
         
-        
-def check_rect_size(df,new_size=None):
+def set_rect(df,new_size=None):
     '''
         Checks whether all stimulus rectangles are consistent across participants.
         Else, throws RuntimeError.
@@ -390,34 +402,37 @@ def check_rect_size(df,new_size=None):
         square rect, centrally positioned on the previous rect.
     '''
     
-    #all rects present in the DF
-    rect = np.unique(df.DISPLAY_COORDS.dropna())
+    global DISPLAY_COORDINATES 
     
-    if len(rect) == 1:                       # all EDF files have the same rect.
+    if DISPLAY_COORDINATES is None:                     # has been checked before?
         
-        print("Consistency check: All files have same stimulus size (rect).")        
-        if new_size is not None:             # replace values with a new one.            
-            rect[0] = square_central_rect(rect[0],new_size)
-            print('Will overwrite rect with new value: {}'.format(rect[0]))
-            
-            indices  = df[pd.notnull(df["DISPLAY_COORDS"])].index            
-            for i in list(indices):                    
-                df.at[i,"DISPLAY_COORDS"] = rect[0]
+        rect = np.unique(df.DISPLAY_COORDS.dropna())    # all rects present in the DF
+    
+        if len(rect) == 1:                              # all EDF files have the same rect.
+        
+            print("Consistency check: All files have same stimulus size (rect).")        
+            if new_size is not None:                    # replace rect with a new one.            
+                rect[0] = new_rect(rect[0],new_size)
+                print('Will overwrite rect with new value: {}'.format(rect[0]))
                 
-        return np.array(rect[0])
-    else:        
-        msg = "DataFrame contains {} different stimulus rects:\n{}".format(len(rect),rect)
-        raise RuntimeError(msg)
+                indices  = df[pd.notnull(df["DISPLAY_COORDS"])].index            
+                for i in list(indices):                    
+                    df.at[i,"DISPLAY_COORDS"] = rect[0]
+                            
+            DISPLAY_COORDINATES = rect[0]                    
+        
+        else:        
+            msg = "DataFrame contains {} different stimulus rects:\n{}".format(len(rect),rect)
+            raise RuntimeError(msg)
+
+    return DISPLAY_COORDINATES
 
 
-
-
-def square_central_rect(old_rect,w):
+def new_rect(old_rect,w):
     '''
     Returns a new centrally located rect with size w based on the previous one.
-    '''
-    
-    import math
+    '''    
+
     if w % 2 == 0:
         midpoint_x = (old_rect[2])/2
         midpoint_y = (old_rect[3])/2
