@@ -217,6 +217,61 @@ def sanity_checks(df):
     #check whether all fixation have the same stimulus size
     check_rect(df)
     
+def get_rect_size(df):
+    """
+    Returns the span of the rect in df as a 1 x 2 tuple where 
+    (vertical span, horizontal span)
+    """
+    rect = get_rect(df)
+    return np.array((rect[3]-rect[1]+1,rect[2]-rect[0]+1))
+       
+def check_rect(df):
+    """
+        returns True if rect size is consistent
+    """
+    if len(np.unique(df.DISPLAY_COORDS)) == 1:
+        print("Consistency check: All files have same stimulus size (rect).")        
+        return True
+    else:
+        return False
+
+def get_rect(df):
+    """
+        returns the rect if consistent.
+    """    
+    if check_rect(df):
+        rect = df["DISPLAY_COORDS"].iat[0]
+        return rect    
+        
+def set_rect(df,new_size=None):
+    '''
+        Checks whether all stimulus rectangles are consistent across participants.
+        Else, throws RuntimeError.
+        If new_value given, replaces the old value. New_value represents the size of 
+        square rect, centrally positioned on the previous rect.
+    '''    
+    rect = get_rect(df)             # all rects present in the DF
+    if new_size is not None:        # replace rect with a new one.        
+        print('Will overwrite rect with new value: {}'.format(rect[0]))        
+        rect                 = new_rect(rect,new_size)
+        df["DISPLAY_COORDS"] = rect.tolist() * df.shape[0]        
+    return df
+
+def new_rect(old_rect,w):
+    '''
+    Returns a new centrally located rect (as np row) with size w based on the previous one.
+    
+    '''    
+    if w % 2 == 0:
+        midpoint_x = (old_rect[2])/2
+        midpoint_y = (old_rect[3])/2
+        return np.array([[math.ceil(midpoint_x-w/2),
+                math.ceil(midpoint_y-w/2),
+                math.floor(midpoint_x+w/2),
+                math.floor(midpoint_y+w/2)]])
+    else:
+        print("w must be an even number")    
+
 
 def fdm(df,downsample=100):
     '''
@@ -252,24 +307,6 @@ def fdm(df,downsample=100):
     df.columns.name = "columns"
     return df
 
-
-def group2dataset(G):
-    """
-        Transforms a Group (i.e. dataframe.groupby object) to a standard dataset 
-        format, such as MNIST dataset that can be downloaded.
-        out["data"] is one row per sample and a column per feature (pixel or pc)
-        out["target"] contains the group labels values. If DataFrame is grouped
-        by subjects, it contaisns subject indices.
-    """
-    data   = G.apply(fdm).unstack().values
-    labels = list(G.groups.keys());
-    
-    out = {'COL_NAMES' : [],
-           'DESCR'  :  '',
-           'data'   : data,
-           'targets': labels}
-    
-    return out
     
 def plot_group(G):
     """
@@ -286,7 +323,6 @@ def plot_group(G):
         plt.subplot(tpanel,tpanel,panel+1)
         plt.title(group_name)
         plot(df)
-
     
 def plot(df,path_stim='',downsample=100):
     '''
@@ -323,7 +359,23 @@ def plot_embedding(X, target, title=None):
     if title is not None:
         plt.title(title)
 
-
+def group2dataset(G):
+    """
+        Transforms a Group (i.e. dataframe.groupby object) to a standard dataset 
+        format, such as MNIST dataset that can be downloaded.
+        out["data"] is one row per sample and a column per feature (pixel or pc)
+        out["target"] contains the group labels values. If DataFrame is grouped
+        by subjects, it contaisns subject indices.
+    """
+    data   = G.apply(fdm).unstack().values
+    labels = list(G.groups.keys());
+    
+    out = {'COL_NAMES' : [],
+           'DESCR'  :  '',
+           'data'   : data,
+           'targets': labels}
+    
+    return out
 
 def decompose(dataset):
     
@@ -380,64 +432,7 @@ def kmeans(G):
             plt.sca(axarr[this_cluster,int(citem[this_cluster]-1)])
             plot(g[1])
 
-def get_rect_size(df):
-    """
-    Returns the span of the rect in df as a 1 x 2 tuple where 
-    (vertical span, horizontal span)
-    """
-    rect = get_rect(df)
-    return np.array((rect[3]-rect[1]+1,rect[2]-rect[0]+1))
-       
-def check_rect(df):
-    """
-        returns True if rect size is consistent
-    """
-    if len(np.unique(df.DISPLAY_COORDS)) == 1:
-        print("Consistency check: All files have same stimulus size (rect).")        
-        return True
-    else:
-        return False
 
-def get_rect(df):
-    """
-        returns the rect if consistent.
-    """    
-    if check_rect(df):
-        rect = df["DISPLAY_COORDS"].iat[0]
-        return rect
-    
-        
-def set_rect(df,new_size=None):
-    '''
-        Checks whether all stimulus rectangles are consistent across participants.
-        Else, throws RuntimeError.
-        If new_value given, replaces the old value. New_value represents the size of 
-        square rect, centrally positioned on the previous rect.
-    '''    
-
-    
-    rect = get_rect(df)             # all rects present in the DF
-    if new_size is not None:        # replace rect with a new one.        
-        print('Will overwrite rect with new value: {}'.format(rect[0]))        
-        rect                 = new_rect(rect,new_size)
-        df["DISPLAY_COORDS"] = rect.tolist() * df.shape[0]        
-    return df
-
-
-def new_rect(old_rect,w):
-    '''
-    Returns a new centrally located rect (as np row) with size w based on the previous one.
-    
-    '''    
-    if w % 2 == 0:
-        midpoint_x = (old_rect[2])/2
-        midpoint_y = (old_rect[3])/2
-        return np.array([[math.ceil(midpoint_x-w/2),
-                math.ceil(midpoint_y-w/2),
-                math.floor(midpoint_x+w/2),
-                math.floor(midpoint_y+w/2)]])
-    else:
-        print("w must be an even number")    
         
 def get_data(df):
     '''
