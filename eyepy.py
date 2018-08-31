@@ -66,8 +66,8 @@ def get_filelist(search_pattern):
         filelist += [(edf_path,{'subject': int(get_subject()), 'run': int(get_run())})]
     return filelist
 
-@memory.cache
-def get_df(filelist,filter_fun=None,newrect=None):
+#@memory.cache()
+def get_df(filelist,filter_fun=None,new_rect=None):
     '''
     Reads all EDF files in the filelist (see get_filelist) tuple with pyedfread 
     and returns a merged dataframe where each row is one fixation.
@@ -157,7 +157,7 @@ def get_df(filelist,filter_fun=None,newrect=None):
     
     #Check whether all data has same DISPLAY_COORDINATES 
     #Overwrite DISPLAY_COORDINATES if required. 
-    events = set_rect(events,newrect)
+    events = set_rect(events,new_rect)
     rect   = get_rect(events)
     
 #    #Remove out of range fixation data    
@@ -233,14 +233,12 @@ def fdm(df,downsample=100):
         Example:
            fdm =  eyepy.fdm(df)
     '''    
-    rect      = check_rect_size(df)              #size of rect
+    rect      = get_rect(df)                     #size of rect
+    rect      = np.array(rect)
     fdm_range = rect.reshape(2,2).T              #size of the count matrix
     fdm_range[:,1] = fdm_range[:,1] + 1
     stim_size = get_rect_size(df)                #stim size
-    fdm_bins  = stim_size/downsample #number of bins            
-    
-    print(fdm_range)
-    print(fdm_bins)
+    fdm_bins  = stim_size/downsample #number of bins                
 
     fdm,xedges,yedges = np.histogram2d(df["gavx"].dropna().values,
                                        df["gavy"].dropna().values,
@@ -381,6 +379,14 @@ def kmeans(G):
             print(citem[this_cluster])
             plt.sca(axarr[this_cluster,int(citem[this_cluster]-1)])
             plot(g[1])
+
+def get_rect_size(df):
+    """
+    Returns the span of the rect in df as a 1 x 2 tuple where 
+    (vertical span, horizontal span)
+    """
+    rect = get_rect(df)
+    return np.array((rect[3]-rect[1]+1,rect[2]-rect[0]+1))
        
 def check_rect(df):
     """
@@ -396,8 +402,9 @@ def get_rect(df):
     """
         returns the rect if consistent.
     """    
-    if check_rect:
-        return df.at[0,"DISPLAY_COORDS"]
+    if check_rect(df):
+        rect = df["DISPLAY_COORDS"].iat[0]
+        return rect
     
         
 def set_rect(df,new_size=None):
@@ -413,7 +420,7 @@ def set_rect(df,new_size=None):
     if new_size is not None:        # replace rect with a new one.        
         print('Will overwrite rect with new value: {}'.format(rect[0]))        
         rect                 = new_rect(rect,new_size)
-        df["DISPLAY_COORDS"] = rect.tolist() * df.shape[0]
+        df["DISPLAY_COORDS"] = rect.tolist() * df.shape[0]        
     return df
 
 
