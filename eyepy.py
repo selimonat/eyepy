@@ -21,6 +21,7 @@ from pyedfread import edf
 import sys
 
 from sklearn import (manifold, datasets, decomposition, ensemble,discriminant_analysis, random_projection)
+from scipy.spatial.distance import pdist, squareform
 from time import time
 
 from joblib import Memory
@@ -338,6 +339,8 @@ def plot(df,path_stim='',downsample=100):
     y     = count.columns.values[0], count.columns.values[-1]
     plt.imshow(count.T,extent=[x[0],x[-1],y[0],y[-1]],alpha=.5)    
     plt.show()    
+
+#
     
 # Scale and visualize the embedding vectors
 def plot_embedding(X, target, title=None):
@@ -450,12 +453,43 @@ def get_data(df):
         c=c+1;
     return data,label
 
+def dendrogram(D):
+    
+    import scipy.cluster.hierarchy as sch
+    
+    D = squareform(D)
+    
+    fig,(axdendro,axmatrix) = plt.subplots(1,2)
+    axdendro.set_position([0.09,0.1,0.2,0.8])
+    #axdendro                = fig.add_axes([0.09,0.1,0.2,0.8])
+    axdendro.set_xticks([])
+    axdendro.set_yticks([])        
 
+    Y = sch.linkage(D, method='centroid')
+    Z = sch.dendrogram(Y, orientation='left',ax=axdendro)
 
-def pattern_similarity(df):
-    FPSA = 1-df.groupby("subject").apply(fdm).unstack(level=1).T.corr()
-    plt.imshow(FPSA.values)
-    plt.show()
+    index = Z['leaves']
+    D = D[index,:]
+    D = D[:,index]
+    
+    axmatrix.set_position([0.3,0.1,0.6,0.8])    
+    im = axmatrix.imshow(D, aspect='auto', origin='lower')
+    axmatrix.set_xticks([])
+    axmatrix.set_yticks([])
+    
+    # Plot colorbar.
+    axcolor = fig.add_axes([0.91,0.1,0.02,0.8])
+    plt.colorbar(im, cax=axcolor)
+    
+    # Display and save figure.
+    fig.show()    
+
+def pattern_similarity(G):
+    """
+        Computes a similarity matrix based on the group G. To compute a similarity 
+        matrix across participant G should be df.groupby('subjects').
+    """          
+    FPSA = pdist(G.apply(fdm).unstack(level=1),metric='correlation')    
     return FPSA
 
 def PCA(df,groupby,explained_variance=.95,downsample=100):
