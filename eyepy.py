@@ -132,7 +132,6 @@ def get_df(filelist,filter_fun=None,new_rect=None):
 
         #add the display coordinates.        
         rect = M.loc[M.py_trial_marker == -1,['DISPLAY_COORDS']].values        
-        print(rect)
         E['DISPLAY_COORDS']  = np.repeat(rect,E.shape[0],axis=0)        
         
         #drop useless columns
@@ -166,8 +165,7 @@ def get_df(filelist,filter_fun=None,new_rect=None):
                     (events.gavx <= rect[2]) & \
                     (events.gavy >= rect[1]) & \
                     (events.gavy <= rect[3]) | events.trial.isnull()
-                    
-    print(sum(valid_fix))
+                        
     events        = events.loc[valid_fix,:]
 #                    
     
@@ -182,32 +180,67 @@ def sanity_checks(df):
     number of trials. DF must come from get_df function.
     """
     
-    #check for calibration quality
-    V= df[['subject','validation_result:']].dropna()
+    #check for calibration quality, detect badly calibrated participants
+    V    = df[['subject','validation_result:']].dropna()
     V['validation_result:'] = V['validation_result:'].map(lambda x: x[0])        
     error = V['validation_result:'].values
     bad   = V.loc[V["validation_result:"] > .5,"subject"]
     
-    plt.figure(figsize=(12, 8), dpi= 80, facecolor='w', edgecolor='k')
-    plt.subplot(1,2,1)
-    plt.hist(error)
-    plt.xlabel('Average Error ($^\circ$)')
-    plt.title('Calibration Quality')
-    ymin, ymax = plt.ylim()
-    plt.plot(np.repeat(np.mean(error),2),[ymin, ymax])
-    plt.box('off')    
+    #plt.style.use('fivethirtyeight')
+    
+    fig, (ax_calib,ax_count,ax_hist) = plt.subplots(1,3,figsize=(24, 6), dpi= 80, facecolor='w', edgecolor='k')
+                
+    
+    ax_calib.hist(error,50)
+    ax_calib.set_xlabel('Average Error ($^\circ$)')
+    ax_calib.set_ylabel('# Participants')
+    ax_calib.set_title('Calibration Quality')    
+    ax_calib.axvline(.5, ls='--', color='r')
+    ax_calib.spines["right"].set_visible(0)
+    ax_calib.spines["top"].set_visible(0)
+    ax_calib.title.set_fontsize(20)
+    ax_calib.xaxis.label.set_fontsize(20)
+    
+    ax_calib.yaxis.label.set_fontsize(20)
+    ax_calib.tick_params(labelsize=15)
+    ax_calib.locator_params(axis='y', nbins=4)
+    ax_calib.grid(color='k', linestyle='-', linewidth=.5,alpha=.1)
     
     report = "There are {} participants ({}) with a calibration error\nthat is more than \
     half a degree. You might consider\nexcluding them from the analysis".format(len(bad),bad.values)
     print(report)
+        
     #check number of fixations per conditions, show results as 2d count matrix.
     fix_count = df.pivot_table(index=['subject'],columns='condition',values='trial',aggfunc=lambda x: len(np.unique(x)))
-    plt.subplot(1,2,2)
-    plt.imshow(fix_count)
-    plt.xlabel('Conditions')    
-    plt.ylabel('Participants')
-    plt.colorbar()
-    plt.title('#Fixations per Condition')    
+    
+    ax_count.imshow(fix_count.values)    
+    ax_count.set_xlabel('Conditions')    
+    ax_count.set_ylabel('Participants')    
+    ax_count.set_title('#Fixations')    
+    ax_count.title.set_fontsize(20)
+    ax_count.xaxis.label.set_fontsize(20)
+    ax_count.yaxis.label.set_fontsize(20)
+    ax_count.tick_params(labelsize=15)
+
+    
+    data = df.groupby(['subject']).apply( lambda x: (x['subject'].unique()[0],x.shape[0]) )
+    s,c  = zip(*data)
+    
+    ax_hist.bar(s,c)
+    ax_hist.set_xlabel('Participant ID')
+    ax_hist.xaxis.label.set_fontsize(20)    
+    ax_hist.set_ylabel('# Fixations')
+    ax_hist.yaxis.label.set_fontsize(20)
+    ax_hist.set_title('Number of Fixations')        
+    ax_hist.title.set_fontsize(20)
+    ax_hist.spines["right"].set_visible(0)
+    ax_hist.spines["top"].set_visible(0)        
+    ax_hist.tick_params(labelsize=15)
+    ax_hist.locator_params(axis='y', nbins=4)
+    ax_hist.grid(color='k', linestyle='-', linewidth=.5,alpha=.1)
+    
+    
+    
     #check for fixations outside the stimulus range.
     #add scatter matrix with x,y values per subject
     colors = df['subject'].transform(lambda x: (x-min(x))/(max(x)-min(x))).transform(lambda x: [x,0,1-x])
