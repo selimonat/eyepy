@@ -373,7 +373,48 @@ def plot(df,path_stim='',downsample=100):
     plt.imshow(count.T,extent=[x[0],x[-1],y[0],y[-1]],alpha=.5)    
     plt.show()    
 
-#
+def pattern_similarity(G):
+    """
+        Computes a similarity matrix based on the group G. To compute a similarity 
+        matrix across participant G should be df.groupby('subjects').
+    """          
+    FPSA = pdist(G.apply(fdm).unstack(level=1),metric='correlation')    
+    return FPSA
+
+def dendrogram(D):
+    
+    import scipy.cluster.hierarchy as sch
+    
+    D = squareform(D)
+    
+    fig,(axdendro,axmatrix) = plt.subplots(2,1)    
+    axdendro.set_position([0.3,0.71,0.6,0.2])
+    #axdendro                = fig.add_axes([0.09,0.1,0.2,0.8])
+    axdendro.set_xticks([])
+    axdendro.set_yticks([])
+    axdendro.spines["top"].set_visible(0)
+    axdendro.spines["right"].set_visible(0)        
+
+    Y = sch.linkage(D, method='centroid')
+    Z = sch.dendrogram(Y, orientation='top',ax=axdendro)
+
+    index = Z['leaves']
+    D = D[index,:]
+    D = D[:,index]
+    
+    axmatrix.set_position([0.3,0.1,0.6,0.6])    
+    im = axmatrix.imshow(D, aspect='auto', origin='lower')
+    axmatrix.set_xticks([])
+    axmatrix.set_yticks([])
+    
+    # Plot colorbar.
+    axcolor = fig.add_axes([0.91,0.1,0.02,0.6])
+    plt.colorbar(im, cax=axcolor)
+    
+    # Display and save figure.
+    fig.show()    
+
+
     
 # Scale and visualize the embedding vectors
 def plot_embedding(X, target, title=None):
@@ -486,44 +527,6 @@ def get_data(df):
         c=c+1;
     return data,label
 
-def dendrogram(D):
-    
-    import scipy.cluster.hierarchy as sch
-    
-    D = squareform(D)
-    
-    fig,(axdendro,axmatrix) = plt.subplots(1,2)
-    axdendro.set_position([0.09,0.1,0.2,0.8])
-    #axdendro                = fig.add_axes([0.09,0.1,0.2,0.8])
-    axdendro.set_xticks([])
-    axdendro.set_yticks([])        
-
-    Y = sch.linkage(D, method='centroid')
-    Z = sch.dendrogram(Y, orientation='left',ax=axdendro)
-
-    index = Z['leaves']
-    D = D[index,:]
-    D = D[:,index]
-    
-    axmatrix.set_position([0.3,0.1,0.6,0.8])    
-    im = axmatrix.imshow(D, aspect='auto', origin='lower')
-    axmatrix.set_xticks([])
-    axmatrix.set_yticks([])
-    
-    # Plot colorbar.
-    axcolor = fig.add_axes([0.91,0.1,0.02,0.8])
-    plt.colorbar(im, cax=axcolor)
-    
-    # Display and save figure.
-    fig.show()    
-
-def pattern_similarity(G):
-    """
-        Computes a similarity matrix based on the group G. To compute a similarity 
-        matrix across participant G should be df.groupby('subjects').
-    """          
-    FPSA = pdist(G.apply(fdm).unstack(level=1),metric='correlation')    
-    return FPSA
 
 def PCA(df,groupby,explained_variance=.95,downsample=100):
     '''
