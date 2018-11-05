@@ -113,12 +113,15 @@ Furthermore, the histogram of fixation ranks shows the expected decrease in high
 ### Hiererchical Clustering of Fixation Maps
 
 EyePy relies on the Group object created by the GroupBy method in DataFrame objects. 
+
 For example, the following snippet computes a similarity matrix using the fixation maps of different subjects.
-This returns a two dimensional, symmetric and non-negative numpy array.
+This returns a two dimensional, symmetric and non-negative numpy array, which characterizes the pair-wise similarity between human eye-movement behavior during viewing of face stimuli. 
+
 ```
 sim_mat = eyepy.pattern_similarity(df.groupby('subject'))
 ```
-This  similarity matrix can be used for constructing a dendrogram as shown below.
+A strong similarity between two participants suggests that they explore faces in a similar manner. The apparent clustering of humans in this dataset is clear. We can use a hierarchical clustering algorithm to explicitely characterize clusters. Below, the dendrogram method takes as input a simalarity matrix and neatly plots a dendrogram aligned with it. The dendrogram is computed with the centroid method by default.
+
 ```
 eyepy.dendrogram(s)
 ```
