@@ -96,7 +96,7 @@ The second plot on the right is a two dimensional histogram that indicates the n
 It can be helpful for finding participants which were not attentive during the recordings. 
 In this case, participant 11 seems to have a lot of fixation data missing.
 
-<img src="https://github.com/selimonat/eyepy/blob/master/doc/sanity_check01.png" width="600">
+<img src="https://github.com/selimonat/eyepy/blob/master/doc/sanity_check01.png" width="800">
 
 (3) Space and time of fixations
 
@@ -106,7 +106,7 @@ Different participants are color coded along the blue-purple color continuum.
 The histogram of fixations along the x and y coordinates shows the central tendency of the fixations to be located on the monitor.
 Furthermore, the histogram of fixation ranks shows the expected decrease in higher ranks.
 
-<img src="https://github.com/selimonat/eyepy/blob/master/doc/sanity_check02.png" width="600">
+<img src="https://github.com/selimonat/eyepy/blob/master/doc/sanity_check02.png" width="800">
 
 ## Data Analysis
 
@@ -122,7 +122,7 @@ This  similarity matrix can be used for constructing a dendrogram as shown below
 ```
 eyepy.dendrogram(s)
 ```
-<img src="https://github.com/selimonat/eyepy/blob/master/doc/hierarchical_01.png" width="600">
+<img src="https://github.com/selimonat/eyepy/blob/master/doc/hierarchical_01.png" width="1000">
 
 
 
